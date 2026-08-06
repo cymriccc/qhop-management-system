@@ -1,0 +1,16 @@
+
+# Maven build folder
+/target/
+
+# NetBeans user-specific settings & cache
+/nbproject/private/
+.nb-connect/
+.nb-gradle/
+
+# Class files and logs
+*.class
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
