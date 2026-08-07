@@ -12,4 +12,11 @@
     </properties>
     <name>QHop System</name>
     <description>Multi-office queue management system for Registrar, Admissions, and Treasury offices.</description>
+    <dependencies>
+        <dependency>
+            <groupId>org.netbeans.external</groupId>
+            <artifactId>AbsoluteLayout</artifactId>
+            <version>RELEASE290</version>
+        </dependency>
+    </dependencies>
 </project>

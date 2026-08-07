@@ -14,7 +14,7 @@ public class QueueManager {
         this.ticketCounter = 1;
     }
 
-    // 1. Generate a new ticket
+    // Generate a new ticket
     public Ticket generateTicket(UserCategory category, String idNumber, Office initialOffice) {
         // Creates a prefix based on the office (e.g., 'A' for Admissions)
         String prefix = initialOffice.name().substring(0, 1);
@@ -28,7 +28,7 @@ public class QueueManager {
         return newTicket;
     }
 
-    // 2. Admin calls the next person in line
+    // Admin calls the next person in line
     public Ticket callNext(Office office) {
         for (Ticket t : activeQueue) {
             // Find the oldest ticket for this specific office that is still WAITING
@@ -37,10 +37,10 @@ public class QueueManager {
                 return t; // Returns the ticket to display on the admin dashboard
             }
         }
-        return null; // Returns null if the queue is empty for that office
+        return null;
     }
 
-    // 3. The "QHop" Transfer Feature
+    // Transfer Feature
     public boolean transferTicket(String ticketNumber, Office destinationOffice) {
         for (Ticket t : activeQueue) {
             if (t.getTicketNumber().equals(ticketNumber)) {
@@ -51,7 +51,7 @@ public class QueueManager {
         return false; // Ticket not found
     }
 
-    // 4. Mark transaction as done
+    // Mark transaction as done
     public void completeTransaction(String ticketNumber) {
         for (Ticket t : activeQueue) {
             if (t.getTicketNumber().equals(ticketNumber)) {
