@@ -3,5 +3,6 @@ package com.mycompany.qhopsystem;
 public enum Office {
     ADMISSIONS,
     REGISTRAR,
-    TREASURY
+    TREASURY,
+    GENERAL_INQUIRY
 }

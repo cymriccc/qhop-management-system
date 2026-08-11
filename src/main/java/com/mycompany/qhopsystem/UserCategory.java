@@ -1,6 +1,7 @@
 package com.mycompany.qhopsystem;
 
 public enum UserCategory {
-    STUDENT_EMPLOYEE,
+    STUDENT_PARENT,
+    STAFF_EMPLOYEE,
     GUEST
 }

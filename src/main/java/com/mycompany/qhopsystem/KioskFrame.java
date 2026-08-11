@@ -4,7 +4,12 @@ package com.mycompany.qhopsystem;
 public class KioskFrame extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(KioskFrame.class.getName());
-
+    private Office selectedOffice;
+    private UserCategory selectedCategory;
+    private String idNumber;
+    
+    // We will initialize the QueueManager here later
+    private QueueManager qManager = new QueueManager();
 
     public KioskFrame() {
         initComponents();
@@ -17,19 +22,29 @@ public class KioskFrame extends javax.swing.JFrame {
 
         eastPanel = new javax.swing.JPanel();
         cardContainer = new javax.swing.JPanel();
-        successPanel = new javax.swing.JPanel();
-        landingPanel = new javax.swing.JPanel();
-        mainCardPanel = new com.mycompany.qhopsystem.RoundedPanel(40);
-        btnStartKiosk = new com.mycompany.qhopsystem.RoundedButton("Click to start", 20);
-        contentPanel = new javax.swing.JPanel();
-        jLabel1 = new javax.swing.JLabel();
-        jLabel2 = new javax.swing.JLabel();
-        jLabel4 = new javax.swing.JLabel();
-        jSeparator1 = new javax.swing.JSeparator();
+        homePanel = new javax.swing.JPanel();
+        logo = new javax.swing.JLabel();
+        welcomeTxt = new javax.swing.JLabel();
+        brandTxt = new javax.swing.JLabel();
+        messageTxt = new javax.swing.JLabel();
+        buttonPanel = new javax.swing.JPanel();
+        registrarBtn = new com.mycompany.qhopsystem.RoundedButton("Registrar", 30);
+        admissionBtn = new com.mycompany.qhopsystem.RoundedButton("Registrar", 30);
+        treasuryBtn = new com.mycompany.qhopsystem.RoundedButton("Registrar", 30);
+        inquiryBtn = new com.mycompany.qhopsystem.RoundedButton("Registrar", 30);
         printConfirmPanel = new javax.swing.JPanel();
         userTypePanel = new javax.swing.JPanel();
+        logo1 = new javax.swing.JLabel();
+        brandTxt1 = new javax.swing.JLabel();
+        jPanel1 = new javax.swing.JPanel();
+        studentBtn = new com.mycompany.qhopsystem.RoundedButton("Registrar", 30);
+        staffBtn = new com.mycompany.qhopsystem.RoundedButton("Registrar", 30);
+        guestBtn = new com.mycompany.qhopsystem.RoundedButton("Registrar", 30);
+        backBtn = new com.mycompany.qhopsystem.RoundedButton("Registrar", 30);
+        keypadPanel = new javax.swing.JPanel();
+        jLabel1 = new javax.swing.JLabel();
+        jLabel2 = new javax.swing.JLabel();
         servicePanel = new javax.swing.JPanel();
-        jPanel1 = new com.mycompany.qhopsystem.RoundedPanel(40);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setMinimumSize(new java.awt.Dimension(1280, 720));
@@ -53,65 +68,97 @@ public class KioskFrame extends javax.swing.JFrame {
 
         cardContainer.setLayout(new java.awt.CardLayout());
 
-        landingPanel.setBackground(new java.awt.Color(0, 51, 102));
-        landingPanel.setLayout(new java.awt.GridBagLayout());
+        homePanel.setBackground(new java.awt.Color(15, 23, 42));
 
-        mainCardPanel.setBackground(new java.awt.Color(255, 255, 255));
-        mainCardPanel.setBorder(javax.swing.BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        mainCardPanel.setMinimumSize(new java.awt.Dimension(500, 700));
-        mainCardPanel.setPreferredSize(new java.awt.Dimension(500, 600));
-        mainCardPanel.setLayout(new java.awt.BorderLayout());
+        logo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/2.png"))); // NOI18N
 
-        btnStartKiosk.setBackground(new java.awt.Color(218, 165, 32));
-        btnStartKiosk.setFont(new java.awt.Font("Segoe UI", 1, 24)); // NOI18N
-        btnStartKiosk.setForeground(new java.awt.Color(0, 0, 0));
-        btnStartKiosk.setText("Click to start");
-        btnStartKiosk.setPreferredSize(new java.awt.Dimension(500, 80));
-        btnStartKiosk.addActionListener(this::btnStartKioskActionPerformed);
-        mainCardPanel.add(btnStartKiosk, java.awt.BorderLayout.SOUTH);
+        welcomeTxt.setFont(new java.awt.Font("Montserrat", 0, 15)); // NOI18N
+        welcomeTxt.setForeground(new java.awt.Color(255, 255, 255));
+        welcomeTxt.setText("welcome to");
 
-        contentPanel.setBackground(new java.awt.Color(255, 255, 255));
-        contentPanel.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        brandTxt.setFont(new java.awt.Font("Montserrat ExtraBold", 1, 48)); // NOI18N
+        brandTxt.setForeground(new java.awt.Color(218, 165, 32));
+        brandTxt.setText("Q-Hop");
 
-        jLabel1.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
-        jLabel1.setForeground(new java.awt.Color(0, 0, 0));
-        jLabel1.setText("Please tap the button below to begin.");
-        contentPanel.add(jLabel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(120, 250, -1, -1));
+        messageTxt.setFont(new java.awt.Font("Montserrat", 0, 15)); // NOI18N
+        messageTxt.setForeground(new java.awt.Color(255, 255, 255));
+        messageTxt.setText("How can we assist you today?");
 
-        jLabel2.setFont(new java.awt.Font("Segoe UI", 0, 24)); // NOI18N
-        jLabel2.setForeground(new java.awt.Color(0, 0, 0));
-        jLabel2.setText("Welcome!");
-        contentPanel.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(180, 210, -1, -1));
+        buttonPanel.setMinimumSize(new java.awt.Dimension(700, 400));
+        buttonPanel.setOpaque(false);
+        buttonPanel.setPreferredSize(new java.awt.Dimension(700, 400));
+        buttonPanel.setLayout(new java.awt.GridLayout(2, 2, 25, 25));
 
-        jLabel4.setIcon(new javax.swing.ImageIcon(getClass().getResource("/2.png"))); // NOI18N
-        jLabel4.setText("jLabel4");
-        jLabel4.setMinimumSize(new java.awt.Dimension(200, 200));
-        jLabel4.setPreferredSize(new java.awt.Dimension(200, 200));
-        contentPanel.add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(140, 0, -1, 100));
+        registrarBtn.setBackground(new java.awt.Color(0, 240, 255, 15));
+        registrarBtn.setFont(new java.awt.Font("Montserrat", 1, 18)); // NOI18N
+        registrarBtn.setForeground(new java.awt.Color(255, 255, 255));
+        registrarBtn.setText("Registrar");
+        registrarBtn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        registrarBtn.addActionListener(this::registrarBtnActionPerformed);
+        buttonPanel.add(registrarBtn);
 
-        jSeparator1.setForeground(new java.awt.Color(218, 165, 32));
-        contentPanel.add(jSeparator1, new org.netbeans.lib.awtextra.AbsoluteConstraints(110, 100, 260, 10));
+        admissionBtn.setBackground(new java.awt.Color(0, 240, 255, 15));
+        admissionBtn.setFont(new java.awt.Font("Montserrat", 1, 18)); // NOI18N
+        admissionBtn.setForeground(new java.awt.Color(255, 255, 255));
+        admissionBtn.setText("Admission");
+        admissionBtn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        admissionBtn.addActionListener(this::admissionBtnActionPerformed);
+        buttonPanel.add(admissionBtn);
 
-        mainCardPanel.add(contentPanel, java.awt.BorderLayout.CENTER);
+        treasuryBtn.setBackground(new java.awt.Color(0, 240, 255, 15));
+        treasuryBtn.setFont(new java.awt.Font("Montserrat", 1, 18)); // NOI18N
+        treasuryBtn.setForeground(new java.awt.Color(255, 255, 255));
+        treasuryBtn.setText("Treasury");
+        treasuryBtn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        treasuryBtn.addActionListener(this::treasuryBtnActionPerformed);
+        buttonPanel.add(treasuryBtn);
 
-        landingPanel.add(mainCardPanel, new java.awt.GridBagConstraints());
+        inquiryBtn.setBackground(new java.awt.Color(0, 240, 255, 15));
+        inquiryBtn.setFont(new java.awt.Font("Montserrat", 1, 18)); // NOI18N
+        inquiryBtn.setForeground(new java.awt.Color(255, 255, 255));
+        inquiryBtn.setText("General Inquiry");
+        inquiryBtn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        inquiryBtn.addActionListener(this::inquiryBtnActionPerformed);
+        buttonPanel.add(inquiryBtn);
 
-        javax.swing.GroupLayout successPanelLayout = new javax.swing.GroupLayout(successPanel);
-        successPanel.setLayout(successPanelLayout);
-        successPanelLayout.setHorizontalGroup(
-            successPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(successPanelLayout.createSequentialGroup()
-                .addComponent(landingPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 1280, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 12, Short.MAX_VALUE))
+        javax.swing.GroupLayout homePanelLayout = new javax.swing.GroupLayout(homePanel);
+        homePanel.setLayout(homePanelLayout);
+        homePanelLayout.setHorizontalGroup(
+            homePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(homePanelLayout.createSequentialGroup()
+                .addGap(540, 540, 540)
+                .addGroup(homePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(messageTxt)
+                    .addGroup(homePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addComponent(brandTxt)
+                        .addComponent(logo)))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, homePanelLayout.createSequentialGroup()
+                .addContainerGap(241, Short.MAX_VALUE)
+                .addGroup(homePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, homePanelLayout.createSequentialGroup()
+                        .addComponent(welcomeTxt)
+                        .addGap(590, 590, 590))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, homePanelLayout.createSequentialGroup()
+                        .addComponent(buttonPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 820, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(231, 231, 231))))
         );
-        successPanelLayout.setVerticalGroup(
-            successPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(successPanelLayout.createSequentialGroup()
-                .addComponent(landingPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 720, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 12, Short.MAX_VALUE))
+        homePanelLayout.setVerticalGroup(
+            homePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(homePanelLayout.createSequentialGroup()
+                .addComponent(logo)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(welcomeTxt)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(brandTxt)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(messageTxt)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 78, Short.MAX_VALUE)
+                .addComponent(buttonPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 303, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(38, 38, 38))
         );
 
-        cardContainer.add(successPanel, "successPanel");
+        cardContainer.add(homePanel, "successPanel");
 
         javax.swing.GroupLayout printConfirmPanelLayout = new javax.swing.GroupLayout(printConfirmPanel);
         printConfirmPanel.setLayout(printConfirmPanelLayout);
@@ -126,28 +173,129 @@ public class KioskFrame extends javax.swing.JFrame {
 
         cardContainer.add(printConfirmPanel, "printConfirmPanel");
 
+        userTypePanel.setBackground(new java.awt.Color(15, 23, 42));
+
+        logo1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/3.png"))); // NOI18N
+
+        brandTxt1.setFont(new java.awt.Font("Montserrat ExtraBold", 1, 48)); // NOI18N
+        brandTxt1.setForeground(new java.awt.Color(218, 165, 32));
+        brandTxt1.setText("<html><p>USER TYPE<br>SELECTION</p></html>");
+
+        jPanel1.setOpaque(false);
+        jPanel1.setLayout(new java.awt.GridLayout(3, 1, 0, 20));
+
+        studentBtn.setBackground(new java.awt.Color(0, 240, 255, 15)
+        );
+        studentBtn.setFont(new java.awt.Font("Montserrat", 1, 15)); // NOI18N
+        studentBtn.setForeground(new java.awt.Color(255, 255, 255));
+        studentBtn.setText("Student / Parent");
+        studentBtn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        studentBtn.addActionListener(this::studentBtnActionPerformed);
+        jPanel1.add(studentBtn);
+
+        staffBtn.setBackground(new java.awt.Color(0, 240, 255, 15));
+        staffBtn.setFont(new java.awt.Font("Montserrat", 1, 15)); // NOI18N
+        staffBtn.setForeground(new java.awt.Color(255, 255, 255));
+        staffBtn.setText("Staff / Employee");
+        staffBtn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        staffBtn.addActionListener(this::staffBtnActionPerformed);
+        jPanel1.add(staffBtn);
+
+        guestBtn.setBackground(new java.awt.Color(0, 240, 255, 15));
+        guestBtn.setFont(new java.awt.Font("Montserrat", 1, 15)); // NOI18N
+        guestBtn.setForeground(new java.awt.Color(255, 255, 255));
+        guestBtn.setText("Guest");
+        guestBtn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        guestBtn.addActionListener(this::guestBtnActionPerformed);
+        jPanel1.add(guestBtn);
+
+        backBtn.setText("BACK");
+        backBtn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        backBtn.addActionListener(this::backBtnActionPerformed);
+
         javax.swing.GroupLayout userTypePanelLayout = new javax.swing.GroupLayout(userTypePanel);
         userTypePanel.setLayout(userTypePanelLayout);
         userTypePanelLayout.setHorizontalGroup(
             userTypePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
+            .addGroup(userTypePanelLayout.createSequentialGroup()
+                .addContainerGap(327, Short.MAX_VALUE)
+                .addGroup(userTypePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, userTypePanelLayout.createSequentialGroup()
+                        .addComponent(backBtn)
+                        .addGap(609, 609, 609))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, userTypePanelLayout.createSequentialGroup()
+                        .addComponent(logo1)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(brandTxt1, javax.swing.GroupLayout.PREFERRED_SIZE, 307, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(452, 452, 452))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, userTypePanelLayout.createSequentialGroup()
+                        .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 463, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(412, 412, 412))))
         );
         userTypePanelLayout.setVerticalGroup(
             userTypePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 0, Short.MAX_VALUE)
+            .addGroup(userTypePanelLayout.createSequentialGroup()
+                .addGroup(userTypePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(userTypePanelLayout.createSequentialGroup()
+                        .addGap(78, 78, 78)
+                        .addComponent(brandTxt1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(userTypePanelLayout.createSequentialGroup()
+                        .addGap(22, 22, 22)
+                        .addComponent(logo1, javax.swing.GroupLayout.PREFERRED_SIZE, 200, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 68, Short.MAX_VALUE)
+                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, 298, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(89, 89, 89)
+                .addComponent(backBtn)
+                .addGap(32, 32, 32))
         );
 
         cardContainer.add(userTypePanel, "userTypePanel");
 
-        servicePanel.setBackground(new java.awt.Color(0, 51, 102));
-        servicePanel.setLayout(new java.awt.GridBagLayout());
+        keypadPanel.setBackground(new java.awt.Color(15, 23, 42));
 
-        jPanel1.setBackground(new java.awt.Color(255, 255, 255));
-        jPanel1.setBorder(javax.swing.BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        jPanel1.setMinimumSize(new java.awt.Dimension(500, 600));
-        jPanel1.setPreferredSize(new java.awt.Dimension(500, 600));
-        jPanel1.setLayout(new java.awt.BorderLayout());
-        servicePanel.add(jPanel1, new java.awt.GridBagConstraints());
+        jLabel1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/3.png"))); // NOI18N
+
+        jLabel2.setFont(new java.awt.Font("Montserrat", 1, 24)); // NOI18N
+        jLabel2.setText("<html><p>Please enter your <br> ID number</p></html>");
+
+        javax.swing.GroupLayout keypadPanelLayout = new javax.swing.GroupLayout(keypadPanel);
+        keypadPanel.setLayout(keypadPanelLayout);
+        keypadPanelLayout.setHorizontalGroup(
+            keypadPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(keypadPanelLayout.createSequentialGroup()
+                .addGap(358, 358, 358)
+                .addComponent(jLabel1)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(508, Short.MAX_VALUE))
+        );
+        keypadPanelLayout.setVerticalGroup(
+            keypadPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(keypadPanelLayout.createSequentialGroup()
+                .addGroup(keypadPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(keypadPanelLayout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jLabel1))
+                    .addGroup(keypadPanelLayout.createSequentialGroup()
+                        .addGap(192, 192, 192)
+                        .addComponent(jLabel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(482, Short.MAX_VALUE))
+        );
+
+        cardContainer.add(keypadPanel, "card6");
+
+        servicePanel.setBackground(new java.awt.Color(15, 23, 42));
+
+        javax.swing.GroupLayout servicePanelLayout = new javax.swing.GroupLayout(servicePanel);
+        servicePanel.setLayout(servicePanelLayout);
+        servicePanelLayout.setHorizontalGroup(
+            servicePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 1292, Short.MAX_VALUE)
+        );
+        servicePanelLayout.setVerticalGroup(
+            servicePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 734, Short.MAX_VALUE)
+        );
 
         cardContainer.add(servicePanel, "servicePanel");
 
@@ -157,89 +305,87 @@ public class KioskFrame extends javax.swing.JFrame {
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
-    private void btnStartKioskActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnStartKioskActionPerformed
-        final int width = cardContainer.getWidth() > 0 ? cardContainer.getWidth() : 1280;
-        final int height = cardContainer.getHeight() > 0 ? cardContainer.getHeight() : 720;
+    private void registrarBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_registrarBtnActionPerformed
+        selectedOffice = Office.REGISTRAR;
+        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
+        cardLayout.show(cardContainer, "userTypePanel");
+    }//GEN-LAST:event_registrarBtnActionPerformed
 
-        // Take snapshot images of the panels for smooth hardware-level sliding
-        java.awt.image.BufferedImage imgLanding = new java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_ARGB);
-        landingPanel.paint(imgLanding.getGraphics());
+    private void admissionBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_admissionBtnActionPerformed
+        selectedOffice = Office.ADMISSIONS;
+        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
+        cardLayout.show(cardContainer, "userTypePanel");
+    }//GEN-LAST:event_admissionBtnActionPerformed
 
-        servicePanel.setSize(width, height);
-        servicePanel.setVisible(true);
-        java.awt.image.BufferedImage imgService = new java.awt.image.BufferedImage(width, height, java.awt.image.BufferedImage.TYPE_INT_ARGB);
-        servicePanel.paint(imgService.getGraphics());
-        servicePanel.setVisible(false);
+    private void treasuryBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_treasuryBtnActionPerformed
+        selectedOffice = Office.TREASURY;
+        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
+        cardLayout.show(cardContainer, "userTypePanel");
+    }//GEN-LAST:event_treasuryBtnActionPerformed
 
-        final javax.swing.JLayeredPane layeredPane = cardContainer.getRootPane().getLayeredPane();
+    private void inquiryBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_inquiryBtnActionPerformed
+        selectedOffice = Office.GENERAL_INQUIRY;
+        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
+        cardLayout.show(cardContainer, "userTypePanel");
+    }//GEN-LAST:event_inquiryBtnActionPerformed
 
-        // Use an array so the inner class can safely update the offset value without casting errors
-        final int[] animOffset = {0};
+    private void backBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_backBtnActionPerformed
+        selectedOffice = null;
+        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
+        cardLayout.show(cardContainer, "successPanel");
+    }//GEN-LAST:event_backBtnActionPerformed
 
-        final javax.swing.JPanel animPanel = new javax.swing.JPanel() {
-            @Override
-            protected void paintComponent(java.awt.Graphics g) {
-                super.paintComponent(g);
-                g.drawImage(imgLanding, -animOffset[0], 0, null);
-                g.drawImage(imgService, width - animOffset[0], 0, null);
-            }
-        };
+    private void studentBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_studentBtnActionPerformed
+        selectedCategory = UserCategory.STUDENT_PARENT;
 
-        java.awt.Point loc = cardContainer.getLocationOnScreen();
-        java.awt.Point rootLoc = cardContainer.getRootPane().getLocationOnScreen();
-        animPanel.setBounds(loc.x - rootLoc.x, loc.y - rootLoc.y, width, height);
-        animPanel.setOpaque(false);
+        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
+        cardLayout.show(cardContainer, "keypadPanel");
+    }//GEN-LAST:event_studentBtnActionPerformed
 
-        cardContainer.setVisible(false);
-        layeredPane.add(animPanel, javax.swing.JLayeredPane.PALETTE_LAYER);
+    private void staffBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_staffBtnActionPerformed
+        selectedCategory = UserCategory.STAFF_EMPLOYEE;
 
-        final int totalSteps = 25;
-        final int[] currentStep = {0};
+        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
+        cardLayout.show(cardContainer, "keypadPanel");
+    }//GEN-LAST:event_staffBtnActionPerformed
 
-        javax.swing.Timer slideTimer = new javax.swing.Timer(10, new java.awt.event.ActionListener() {
-            @Override
-            public void actionPerformed(java.awt.event.ActionEvent e) {
-                currentStep[0]++;
-                float progress = (float) currentStep[0] / totalSteps;
-                // Smooth ease-out curve
-                float eased = 1 - (1 - progress) * (1 - progress);
-                animOffset[0] = (int) (eased * width);
-                animPanel.repaint();
+    private void guestBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_guestBtnActionPerformed
+        selectedCategory = UserCategory.GUEST;
+        idNumber = "N/A";
 
-                if (currentStep[0] >= totalSteps) {
-                    ((javax.swing.Timer)e.getSource()).stop();
-                    layeredPane.remove(animPanel);
-                    layeredPane.repaint();
-                    cardContainer.setVisible(true);
-
-                    java.awt.CardLayout cl = (java.awt.CardLayout)(cardContainer.getLayout());
-                    cl.show(cardContainer, "servicePanel");
-                }
-            }
-        });
-
-        slideTimer.start();
-    }//GEN-LAST:event_btnStartKioskActionPerformed
+        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
+        cardLayout.show(cardContainer, "printConfirmPanel");
+    }//GEN-LAST:event_guestBtnActionPerformed
 
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(() -> new KioskFrame().setVisible(true));
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton btnStartKiosk;
+    private javax.swing.JButton admissionBtn;
+    private javax.swing.JButton backBtn;
+    private javax.swing.JLabel brandTxt;
+    private javax.swing.JLabel brandTxt1;
+    private javax.swing.JPanel buttonPanel;
     private javax.swing.JPanel cardContainer;
-    private javax.swing.JPanel contentPanel;
     private javax.swing.JPanel eastPanel;
+    private javax.swing.JButton guestBtn;
+    private javax.swing.JPanel homePanel;
+    private javax.swing.JButton inquiryBtn;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
-    private javax.swing.JLabel jLabel4;
     private javax.swing.JPanel jPanel1;
-    private javax.swing.JSeparator jSeparator1;
-    private javax.swing.JPanel landingPanel;
-    private javax.swing.JPanel mainCardPanel;
+    private javax.swing.JPanel keypadPanel;
+    private javax.swing.JLabel logo;
+    private javax.swing.JLabel logo1;
+    private javax.swing.JLabel messageTxt;
     private javax.swing.JPanel printConfirmPanel;
+    private javax.swing.JButton registrarBtn;
     private javax.swing.JPanel servicePanel;
-    private javax.swing.JPanel successPanel;
+    private javax.swing.JButton staffBtn;
+    private javax.swing.JButton studentBtn;
+    private javax.swing.JButton treasuryBtn;
     private javax.swing.JPanel userTypePanel;
+    private javax.swing.JLabel welcomeTxt;
     // End of variables declaration//GEN-END:variables
 }
