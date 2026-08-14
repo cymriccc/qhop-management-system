@@ -9,8 +9,10 @@ public class QHopSystem {
             javax.swing.JFrame launcher = new javax.swing.JFrame();
             launcher.setUndecorated(true);
             launcher.setSize(450, 350);
+            
+            // BRINGING THIS BACK: Physically clip the corners
+            launcher.setShape(new java.awt.geom.RoundRectangle2D.Double(0, 0, 450, 350, 40, 40));
             launcher.setLocationRelativeTo(null);
-            launcher.setBackground(new java.awt.Color(0, 0, 0, 0)); 
             
             // Dark slate background
             RoundedPanel bgPanel = new RoundedPanel(40);

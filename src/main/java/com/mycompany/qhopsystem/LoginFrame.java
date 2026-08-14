@@ -83,6 +83,7 @@ public class LoginFrame extends javax.swing.JFrame {
         jPanel2.add(btnLogin, new org.netbeans.lib.awtextra.AbsoluteConstraints(145, 470, 350, 55));
 
         btnClose.setBackground(new java.awt.Color(255, 50, 50));
+        btnClose.setFont(new java.awt.Font("Montserrat", 1, 16)); // NOI18N
         btnClose.setForeground(new java.awt.Color(255, 255, 255));
         btnClose.setText("X");
         btnClose.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
@@ -112,7 +113,8 @@ public class LoginFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_btnLoginActionPerformed
 
     private void btnCloseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCloseActionPerformed
-        System.exit(0);
+        this.dispose();
+        QHopSystem.main(null);
     }//GEN-LAST:event_btnCloseActionPerformed
 
     public static void main(String args[]) {

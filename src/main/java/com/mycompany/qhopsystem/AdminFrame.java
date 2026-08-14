@@ -692,45 +692,31 @@ public class AdminFrame extends javax.swing.JFrame {
 
     private void btnSkipActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSkipActionPerformed
         String currentTicket = jLabel9.getText();
-
         if (currentTicket.equals("---")) {
-            javax.swing.JOptionPane.showMessageDialog(this, "No active ticket to skip!");
+            AlertBox.show(this, "Action Failed", "No active ticket to skip!", true);
             return;
         }
-
         queueManager.transferTicket(currentTicket, Office.REGISTRAR);
         refreshDashboard();
     }//GEN-LAST:event_btnSkipActionPerformed
 
     private void btnCallNextActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCallNextActionPerformed
         Ticket called = queueManager.callNext(null);
-
         if (called == null) {
-            javax.swing.JOptionPane.showMessageDialog(this, "No waiting tickets in queue!");
+            AlertBox.show(this, "Queue Empty", "No waiting tickets in queue!", false);
         }
-
         refreshDashboard();
     }//GEN-LAST:event_btnCallNextActionPerformed
 
     private void btnTransferActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTransferActionPerformed
         String currentTicket = jLabel9.getText();
-
         if (currentTicket.equals("---")) {
-            javax.swing.JOptionPane.showMessageDialog(this, "No active ticket to transfer!");
+            AlertBox.show(this, "Action Failed", "No active ticket to transfer!", true);
             return;
         }
 
-        Office[] offices = Office.values();
-        Office selectedOffice = (Office) javax.swing.JOptionPane.showInputDialog(
-                this,
-                "Select office to transfer ticket " + currentTicket + " to:",
-                "Transfer Ticket",
-                javax.swing.JOptionPane.QUESTION_MESSAGE,
-                null,
-                offices,
-                offices[0]
-        );
-
+        // Uses our new custom Dropdown popup!
+        Office selectedOffice = AlertBox.showOfficePicker(this, currentTicket);
         if (selectedOffice != null) {
             queueManager.transferTicket(currentTicket, selectedOffice);
             refreshDashboard();
@@ -739,45 +725,33 @@ public class AdminFrame extends javax.swing.JFrame {
 
     private void btnCompleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCompleteActionPerformed
         String currentTicket = jLabel9.getText();
-
         if (currentTicket.equals("---")) {
-            javax.swing.JOptionPane.showMessageDialog(this, "No active ticket to complete!");
+            AlertBox.show(this, "Action Failed", "No active ticket to complete!", true);
             return;
         }
-
         queueManager.completeTransaction(currentTicket);
         refreshDashboard();
     }//GEN-LAST:event_btnCompleteActionPerformed
 
     private void btnNavDashboardActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNavDashboardActionPerformed
         setActiveNavButton(btnNavDashboard);
-        java.awt.CardLayout layout = (java.awt.CardLayout) contentContainer.getLayout();
-        layout.show(contentContainer, "dashboardPanel");
+        TransitionHelper.fade(contentContainer, "dashboardPanel");
     }//GEN-LAST:event_btnNavDashboardActionPerformed
 
     private void btnNavQueueActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNavQueueActionPerformed
         setActiveNavButton(btnNavQueue);
-        java.awt.CardLayout layout = (java.awt.CardLayout) contentContainer.getLayout();
-        layout.show(contentContainer, "queuePanel");
+        TransitionHelper.fade(contentContainer, "queuePanel");
     }//GEN-LAST:event_btnNavQueueActionPerformed
 
     private void btnNavTransactionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnNavTransactionActionPerformed
         setActiveNavButton(btnNavTransaction);
-        java.awt.CardLayout layout = (java.awt.CardLayout) contentContainer.getLayout();
-        layout.show(contentContainer, "transactionPanel");
+        TransitionHelper.fade(contentContainer, "transactionPanel");
     }//GEN-LAST:event_btnNavTransactionActionPerformed
 
     private void btnLogOutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLogOutActionPerformed
-        int confirm = javax.swing.JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to log out?",
-                "Confirm Logout",
-                javax.swing.JOptionPane.YES_NO_OPTION,
-                javax.swing.JOptionPane.QUESTION_MESSAGE);
-
-        if (confirm == javax.swing.JOptionPane.YES_OPTION) {
-            // Open the Login screen
+        boolean confirm = AlertBox.showConfirm(this, "Log Out", "Are you sure you want to log out?");
+        if (confirm) {
             new LoginFrame().setVisible(true);
-            // Close the Admin Dashboard
             this.dispose();
         }
     }//GEN-LAST:event_btnLogOutActionPerformed

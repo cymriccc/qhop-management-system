@@ -569,49 +569,42 @@ public class KioskFrame extends javax.swing.JFrame {
     private void registrarBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_registrarBtnActionPerformed
         selectedOffice = Office.REGISTRAR;
         selectedServiceName = "Request Documents";
-        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
-        cardLayout.show(cardContainer, "userTypePanel");
+        TransitionHelper.fade(cardContainer, "userTypePanel");
     }//GEN-LAST:event_registrarBtnActionPerformed
 
     private void admissionBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_admissionBtnActionPerformed
         selectedOffice = Office.ADMISSIONS;
         selectedServiceName = "Enrollment Inquiry";
-        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
-        cardLayout.show(cardContainer, "userTypePanel");
+        TransitionHelper.fade(cardContainer, "userTypePanel");
     }//GEN-LAST:event_admissionBtnActionPerformed
 
     private void treasuryBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_treasuryBtnActionPerformed
         selectedOffice = Office.TREASURY;
         selectedServiceName = "Tuition Payment";
-        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
-        cardLayout.show(cardContainer, "userTypePanel");
+        TransitionHelper.fade(cardContainer, "userTypePanel");
     }//GEN-LAST:event_treasuryBtnActionPerformed
 
     private void inquiryBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_inquiryBtnActionPerformed
         selectedOffice = Office.GENERAL_INQUIRY;
         selectedServiceName = "General Inquiry";
-        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
-        cardLayout.show(cardContainer, "userTypePanel");
+        TransitionHelper.fade(cardContainer, "userTypePanel");
     }//GEN-LAST:event_inquiryBtnActionPerformed
 
     private void backBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_backBtnActionPerformed
         selectedOffice = null;
-        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
-        cardLayout.show(cardContainer, "successPanel");
+        TransitionHelper.fade(cardContainer, "successPanel");
     }//GEN-LAST:event_backBtnActionPerformed
 
     private void studentBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_studentBtnActionPerformed
         selectedCategory = UserCategory.STUDENT_PARENT;
 
-        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
-        cardLayout.show(cardContainer, "keypadPanel");
+        TransitionHelper.fade(cardContainer, "keypadPanel");
     }//GEN-LAST:event_studentBtnActionPerformed
 
     private void staffBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_staffBtnActionPerformed
         selectedCategory = UserCategory.STAFF_EMPLOYEE;
 
-        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
-        cardLayout.show(cardContainer, "keypadPanel");
+        TransitionHelper.fade(cardContainer, "keypadPanel");
     }//GEN-LAST:event_staffBtnActionPerformed
 
     private void guestBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_guestBtnActionPerformed
@@ -620,8 +613,7 @@ public class KioskFrame extends javax.swing.JFrame {
         
         refreshConfirmationScreen();
         
-        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
-        cardLayout.show(cardContainer, "printConfirmPanel");
+        TransitionHelper.fade(cardContainer, "printConfirmPanel");
     }//GEN-LAST:event_guestBtnActionPerformed
 
     private void btn1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn1ActionPerformed
@@ -696,26 +688,19 @@ public class KioskFrame extends javax.swing.JFrame {
         idDisplayField.setText("Enter ID number");
         idDisplayField.setForeground(new java.awt.Color(100, 130, 150));
 
-        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
-        cardLayout.show(cardContainer, "userTypePanel");
+        TransitionHelper.fade(cardContainer, "userTypePanel");
     }//GEN-LAST:event_goBackBtnActionPerformed
 
     private void continueBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_continueBtnActionPerformed
         String typedId = idDisplayField.getText().trim();
 
         if (typedId.equals("Enter ID number") || typedId.isEmpty()) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "Please enter your ID number before continuing.",
-                    "Input Required",
-                    javax.swing.JOptionPane.WARNING_MESSAGE);
+            AlertBox.show(this, "Input Required", "Please enter your ID number before continuing.", true);
             return;
         }
 
         if (!typedId.matches("\\d{4}-\\d{6}")) {
-            javax.swing.JOptionPane.showMessageDialog(this,
-                    "Invalid format. Please enter a valid 10-digit ID (e.g., 2026-123456).",
-                    "Invalid ID",
-                    javax.swing.JOptionPane.ERROR_MESSAGE);
+            AlertBox.show(this, "Invalid ID", "Invalid format. Please use 10 digits (e.g. 2026-123456).", true);
             return;
         }
 
@@ -723,8 +708,7 @@ public class KioskFrame extends javax.swing.JFrame {
 
         refreshConfirmationScreen();
 
-        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
-        cardLayout.show(cardContainer, "printConfirmPanel");
+        TransitionHelper.fade(cardContainer, "printConfirmPanel");
     }//GEN-LAST:event_continueBtnActionPerformed
 
     private void cancelBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelBtnActionPerformed
@@ -736,8 +720,7 @@ public class KioskFrame extends javax.swing.JFrame {
         idDisplayField.setText("Enter ID number");
         idDisplayField.setForeground(new java.awt.Color(100, 130, 150));
 
-        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
-        cardLayout.show(cardContainer, "successPanel");
+        TransitionHelper.fade(cardContainer, "successPanel");
     }//GEN-LAST:event_cancelBtnActionPerformed
 
     private void confirmFinalBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_confirmFinalBtnActionPerformed
@@ -750,8 +733,7 @@ public class KioskFrame extends javax.swing.JFrame {
             finalDetailsLbl.setText("<html><center><b>" + formattedOffice + "</b><br>" + selectedServiceName + "</center></html>");
         }
 
-        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
-        cardLayout.show(cardContainer, "ticketResultPanel");
+        TransitionHelper.fade(cardContainer, "ticketResultPanel");
     }//GEN-LAST:event_confirmFinalBtnActionPerformed
 
     private void btnFinishActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFinishActionPerformed
@@ -765,8 +747,7 @@ public class KioskFrame extends javax.swing.JFrame {
         idDisplayField.setForeground(new java.awt.Color(100, 130, 150));
 
         // Go back to the Start Menu
-        java.awt.CardLayout cardLayout = (java.awt.CardLayout) cardContainer.getLayout();
-        cardLayout.show(cardContainer, "successPanel");
+        TransitionHelper.fade(cardContainer, "successPanel");
     }//GEN-LAST:event_btnFinishActionPerformed
 
     public static void main(String args[]) {
