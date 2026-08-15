@@ -1,6 +1,6 @@
 # Q-Hop Management System
 
-The Q-Hop (QueHop) Queue Handling for Office Procedures is a full-stack, desktop-based queue management system designed to organize student and visitor queues in school administrative offices. The system automates queue number generation through a sleek kiosk, secures administrative access with encrypted authentication, and provides staff with a real-time dashboard to manage office workflows.
+The Q-Hop (QueHop) Queue Handling for Office Procedures is a full-stack, cloud-connected queue management system designed to organize student and visitor queues in school administrative offices. The system automates queue number generation through a sleek self-service kiosk, secures administrative access with encrypted authentication, and synchronizes office workflows in real-time across an Admin Dashboard and a public TV Display.
 
 ---
 
@@ -14,39 +14,43 @@ To develop a comprehensive Queueing Management System that organizes student que
 * **GUI Framework:** Java Swing & AWT (Custom Glassmorphism UI components)
 * **IDE:** Apache NetBeans
 * **Architecture:** Object-Oriented Component-Based UI (`CardLayout` transitions & Model-View-Controller pattern)
-* **Database:** MongoDB (Local instance with Compass visual support)
-* **Security:** jBCrypt for secure password hashing
+* **Database:** MongoDB Atlas (Cloud) with strict `$jsonSchema` validation and Compound Indexing
+* **Security:** jBCrypt (Password Hashing) & `javax.crypto` (AES-128 Encryption for IDs at rest)
 
 ---
 
 ## ✨ Features
-* **Custom Application Launcher:** Modern startup window allowing users to choose between launching the Admin Dashboard or Self-Service Kiosk.
-* **Secure Admin Authentication:** Role-based access control backed by MongoDB and BCrypt password encryption.
-* **Automated Queue Generation:** Users can generate a queue number slip directly from a responsive desktop-based kiosk.
+* **Cloud-Synced Multi-Device Ecosystem:** The Self-Service Kiosk, Admin Dashboard, and public TV Queue Display are all decoupled and sync in real-time across multiple computers via MongoDB Atlas.
+* **Custom Application Launcher:** Modern startup window allowing users to choose their deployment mode (Admin, Kiosk, or TV Display).
+* **Enterprise-Grade Security:**
+  * **AES Encryption:** Student and Staff ID numbers are completely scrambled (AES-128 Base64) before being stored in the cloud.
+  * **Brute-Force Protection:** Admin login auto-locks for 60 seconds after 5 failed attempts.
+  * **Session Timeouts:** System automatically logs out inactive admin sessions after 30 seconds.
+* **Automated Queue Generation:** Users generate a queue number slip directly from a responsive desktop-based kiosk with an interactive on-screen keypad.
+* **Smart Anti-Spam Check:** Real-time database queries prevent users from generating duplicate tickets if they are already in the active queue.
 * **Sleek Slate & Ice Aesthetic:** Features a modern hardware-accelerated UI utilizing deep slate-blue backgrounds, high-contrast ice-blue text, and custom rounded components.
-* **Dynamic Workflows:** Smart navigation logic (e.g., Guests automatically bypass ID keypad entry to speed up queue times).
-* **Queue Flow Management:** Administrative staff can manage the queue flow efficiently, calling the next oldest ticket in the waiting list, skipping, or completing transactions.
-* **Q-Hop (Transfer Feature):** Staff can transfer a user's ticket to another office seamlessly, resetting their timestamp and placing them at the back of the new queue.
-* **Real-time Tracking & History:** Automatically polls MongoDB every two seconds to update live dashboard metrics, active queue tables, and archived transaction logs.
+* **Queue Flow Management:** Administrative staff can efficiently call the next oldest ticket, skip absent users, or complete transactions.
+* **Q-Hop (Transfer Feature):** Staff can transfer a user's ticket to another office seamlessly, resetting their timestamp and safely pushing them into the new queue line.
 
 ---
 
-## 🏢 Supported Offices & Services
-The system manages queues for the following administrative categories:
+## 🏢 Supported Offices & Dynamic Services
+The system provides dynamic service options based on the user's category:
 
 ### 1. Registrar
-* Requesting documents and academic records.
+* **Students:** Transcript of Records (TOR), Cert. of Enrollment (COE) / Good Moral, Diploma Application, Cross-Enrollment.
+* **Staff:** Grade sheet submission, Service records, Student clearance approvals.
 
 ### 2. Admission
-* Student admission and enrollment processing.
-* Submission of admission requirements.
+* **Students:** New Admission Inquiry, Entrance Exam Registration, Credentials Submission, Transferee Evaluation.
+* **Staff:** Applicant evaluation, Entrance requirements routing, Employee-dependent discounts.
 
 ### 3. Treasury
-* Tuition fee payment and processing.
-* Other school-related transactions.
+* **Students:** Tuition Assessment/Payment, Statement of Account (SOA), Refund Processing, Scholarship Validation.
+* **Staff:** Expense reimbursement, Budget/Cash advances, Payroll inquiries.
 
 ### 4. General Inquiry
-* General campus questions, payment inquiries, and routing.
+* General campus routing, information, and administrative support.
 
 ---
 
@@ -54,33 +58,35 @@ The system manages queues for the following administrative categories:
 The system tailors the queue generation process to three specific user categories:
 * **Student / Parent:** Requires secure 10-digit ID verification (`YYYY-######`).
 * **Staff / Employee:** Requires 10-digit ID verification.
-* **Guest:** Expedited queue entry (No ID required).
+* **Guest:** Expedited queue entry (Bypasses the keypad entirely for speed).
 
 ---
 
 ## 🚀 Current Development Status
 - [x] Backend Object-Oriented Architecture (`QueueManager`, `Ticket` entities)
-- [x] MongoDB Integration for full data persistence
-- [x] Secure BCrypt Authentication & Default Admin Seed
+- [x] MongoDB Atlas Cloud Integration for full remote data persistence
+- [x] Secure BCrypt Authentication & Initial Admin Cloud Setup
+- [x] AES-128 Encryption for PII Data & Strict Schema Validation
 - [x] Custom Application Launcher (`QHopSystem`)
-- [x] Kiosk UI Shell & `CardLayout` Configuration
-- [x] Service & User Type Selection Screens
+- [x] Kiosk UI Shell, `CardLayout` Configuration, & Keypad Logic
+- [x] Real-time TV Queue Display Component (`DisplayFrame`)
 - [x] Hardware-accelerated transitions & Custom Alert Popups
-- [x] Keypad logic and Guest smart-skip feature
-- [x] Confirmation & Ticket Generation Screen
-- [x] Admin Dashboard UI (Live Stats, Active Queue Table, & Transaction History Archive)
+- [x] Admin Dashboard UI (Live Stats, Active Queue Table, & Transaction Archive)
+- [x] Compound Database Indexing for fast queue polling and anti-spam checks
 
 ---
 
 ## 🛠️ Running the Application
 
-1. **Start MongoDB:**
-   Ensure your local MongoDB service is running:
-   ```bash
-   sudo systemctl start mongod
-   ```
-2. **Open in Apache NetBeans:**
+Because this system is cloud-connected and secure, it does not require a local database installation. However, it requires a secure encryption key to boot.
+
+1. **Clone & Open in Apache NetBeans:**
    Open the project folder and make sure your Main Class is set to `com.mycompany.qhopsystem.QHopSystem`.
 
-3. **Build & Run:**
-   Clean and build the project (Shift + F11), then run (F6) to open the custom system launcher.
+2. **Configure Security Environment Variables:**
+   To pass the security check, right-click the project -> **Properties** -> **Run**. In the **VM Options** field, insert your secure 16-character encryption key and cloud URI:
+   ```text
+   -DAPP_KEY=Your16CharKey123 -DMONGO_URI="mongodb+srv://<user>:<pass>@your-cluster.mongodb.net/"
+   ```
+3. Build & Run:
+   Clean and build the project (`Shift + F11`), then run (`F6`) to open the custom system launcher. The app will automatically sync with the cloud database.
