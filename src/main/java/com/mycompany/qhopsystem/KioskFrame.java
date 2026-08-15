@@ -8,54 +8,83 @@ public class KioskFrame extends javax.swing.JFrame {
     private UserCategory selectedCategory;
     private String idNumber;
     private String selectedServiceName;
-
     private QueueManager qManager = new QueueManager();
 
     public KioskFrame() {
         initComponents();
-        
+        this.setExtendedState(javax.swing.JFrame.MAXIMIZED_BOTH);
+        this.getContentPane().removeAll();
+
+        javax.swing.JPanel centerWrapper = new javax.swing.JPanel(new java.awt.GridBagLayout());
+        centerWrapper.setBackground(new java.awt.Color(15, 23, 42));
+
+        cardContainer.setPreferredSize(new java.awt.Dimension(1280, 720));
+        cardContainer.setMinimumSize(new java.awt.Dimension(1280, 720));
+        cardContainer.setMaximumSize(new java.awt.Dimension(1280, 720));
+
+        centerWrapper.add(cardContainer, new java.awt.GridBagConstraints());
+        this.getContentPane().setLayout(new java.awt.BorderLayout());
+        this.getContentPane().add(centerWrapper, java.awt.BorderLayout.CENTER);
+        this.revalidate();
+        this.repaint();
+
         // Text field in keypadPanel (placeholder text)
         idDisplayField.setEditable(false);
         idDisplayField.setText("Enter ID number");
         idDisplayField.setForeground(new java.awt.Color(100, 130, 150));
-        
-        // Scale logo in userTypePanel
+
+        // Scale logos
         javax.swing.ImageIcon originalIcon1 = new javax.swing.ImageIcon(getClass().getResource("/6.png"));
         java.awt.Image scaledImage1 = originalIcon1.getImage().getScaledInstance(120, -1, java.awt.Image.SCALE_SMOOTH);
         logo1.setIcon(new javax.swing.ImageIcon(scaledImage1));
-        
-        // Scale logo in keypadPanel
+
         javax.swing.ImageIcon originalIconKeypad = new javax.swing.ImageIcon(getClass().getResource("/6.png"));
         java.awt.Image scaledImageKeypad = originalIconKeypad.getImage().getScaledInstance(80, -1, java.awt.Image.SCALE_SMOOTH);
         jLabel1.setIcon(new javax.swing.ImageIcon(scaledImageKeypad));
-        
-        // Scale logo in printConfirmPanel
+
         javax.swing.ImageIcon originalIconConfirm = new javax.swing.ImageIcon(getClass().getResource("/6.png"));
         java.awt.Image scaledImageConfirm = originalIconConfirm.getImage().getScaledInstance(90, -1, java.awt.Image.SCALE_SMOOTH);
         logo2.setIcon(new javax.swing.ImageIcon(scaledImageConfirm));
-        
-        // Scale checkmark icon
+
         javax.swing.ImageIcon originalCheck = new javax.swing.ImageIcon(getClass().getResource("/check.png"));
         java.awt.Image scaledCheck = originalCheck.getImage().getScaledInstance(70, 70, java.awt.Image.SCALE_SMOOTH);
         checkmark.setIcon(new javax.swing.ImageIcon(scaledCheck));
+
+        // 30 Second Inactivity Reset
+        javax.swing.Timer inactivityTimer = new javax.swing.Timer(30000, e -> {
+            selectedOffice = null;
+            selectedCategory = null;
+            selectedServiceName = null;
+            idNumber = "";
+            idDisplayField.setText("Enter ID number");
+            idDisplayField.setForeground(new java.awt.Color(100, 130, 150));
+            TransitionHelper.fade(cardContainer, "successPanel");
+        });
+        inactivityTimer.setRepeats(false);
+        inactivityTimer.start();
+        java.awt.Toolkit.getDefaultToolkit().addAWTEventListener(event -> {
+            inactivityTimer.restart();
+        }, java.awt.AWTEvent.KEY_EVENT_MASK | java.awt.AWTEvent.MOUSE_EVENT_MASK | java.awt.AWTEvent.MOUSE_MOTION_EVENT_MASK);
     }
     
     private void refreshConfirmationScreen() {
-        // Convert the Enums to formatted strings
         if (selectedServiceName != null) {
             confirmServiceLbl.setText("<html><b>Service</b><br>" + selectedServiceName + "</html>");
+        } else {
+            confirmServiceLbl.setText("<html><b>Service</b><br>---</html>");
         }
 
         if (selectedOffice != null) {
             String formattedOffice = selectedOffice.name().replace("_", " ");
-            confirmOfficeLbl.setText("<html><b>Office</b><br>" + formattedOffice + "</html>");
+            confirmUserTypeLbl.setText("<html><b>Office</b><br>" + formattedOffice + "</html>");
         }
 
         if (selectedCategory != null) {
-            confirmUserTypeLbl.setText("<html><b>User Type</b><br>" + selectedCategory.name().replace("_", " / ") + "</html>");
+            confirmIdLbl.setText("<html><b>User Type</b><br>" + selectedCategory.name().replace("_", " / ") + "</html>");
         }
 
-        confirmIdLbl.setText("<html><b>ID number</b><br>" + (idNumber != null && !idNumber.isEmpty() ? idNumber : "N/A") + "</html>");
+        String displayId = (idNumber != null && !idNumber.isEmpty()) ? idNumber : "N/A";
+        confirmOfficeLbl.setText("<html><b>ID number</b><br>" + displayId + "</html>");
     }
     
     private void appendToId(String number) {
@@ -568,25 +597,25 @@ public class KioskFrame extends javax.swing.JFrame {
 
     private void registrarBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_registrarBtnActionPerformed
         selectedOffice = Office.REGISTRAR;
-        selectedServiceName = "Request Documents";
+        selectedServiceName = null;
         TransitionHelper.fade(cardContainer, "userTypePanel");
     }//GEN-LAST:event_registrarBtnActionPerformed
 
     private void admissionBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_admissionBtnActionPerformed
         selectedOffice = Office.ADMISSIONS;
-        selectedServiceName = "Enrollment Inquiry";
+        selectedServiceName = null;
         TransitionHelper.fade(cardContainer, "userTypePanel");
     }//GEN-LAST:event_admissionBtnActionPerformed
 
     private void treasuryBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_treasuryBtnActionPerformed
         selectedOffice = Office.TREASURY;
-        selectedServiceName = "Tuition Payment";
+        selectedServiceName = null;
         TransitionHelper.fade(cardContainer, "userTypePanel");
     }//GEN-LAST:event_treasuryBtnActionPerformed
 
     private void inquiryBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_inquiryBtnActionPerformed
         selectedOffice = Office.GENERAL_INQUIRY;
-        selectedServiceName = "General Inquiry";
+        selectedServiceName = null;
         TransitionHelper.fade(cardContainer, "userTypePanel");
     }//GEN-LAST:event_inquiryBtnActionPerformed
 
@@ -597,13 +626,13 @@ public class KioskFrame extends javax.swing.JFrame {
 
     private void studentBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_studentBtnActionPerformed
         selectedCategory = UserCategory.STUDENT_PARENT;
-
+        selectedServiceName = AlertBox.showServicePicker(this, selectedOffice, selectedCategory);
         TransitionHelper.fade(cardContainer, "keypadPanel");
     }//GEN-LAST:event_studentBtnActionPerformed
 
     private void staffBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_staffBtnActionPerformed
         selectedCategory = UserCategory.STAFF_EMPLOYEE;
-
+        selectedServiceName = AlertBox.showServicePicker(this, selectedOffice, selectedCategory);
         TransitionHelper.fade(cardContainer, "keypadPanel");
     }//GEN-LAST:event_staffBtnActionPerformed
 
@@ -611,9 +640,26 @@ public class KioskFrame extends javax.swing.JFrame {
         selectedCategory = UserCategory.GUEST;
         idNumber = "N/A";
         
-        refreshConfirmationScreen();
+        if (selectedOffice == Office.REGISTRAR) {
+            selectedServiceName = "Registrar Inquiry";
+        } else if (selectedOffice == Office.ADMISSIONS) {
+            selectedServiceName = "Admissions Inquiry";
+        } else if (selectedOffice == Office.TREASURY) {
+            selectedServiceName = "Treasury Inquiry";
+        } else {
+            selectedServiceName = "General Inquiry";
+        }
         
+        refreshConfirmationScreen();
+
         TransitionHelper.fade(cardContainer, "printConfirmPanel");
+        
+        guestBtn.setEnabled(false); // Instantly disable the button
+        javax.swing.Timer guestTimer = new javax.swing.Timer(5000, e -> {
+            guestBtn.setEnabled(true); // Re-enable after 5 seconds
+        });
+        guestTimer.setRepeats(false);
+        guestTimer.start();
     }//GEN-LAST:event_guestBtnActionPerformed
 
     private void btn1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btn1ActionPerformed
@@ -703,11 +749,17 @@ public class KioskFrame extends javax.swing.JFrame {
             AlertBox.show(this, "Invalid ID", "Invalid format. Please use 10 digits (e.g. 2026-123456).", true);
             return;
         }
-
+        
+        if (qManager.hasActiveTicket(typedId)) {
+            AlertBox.show(this, "Duplicate Ticket", "You already have an active ticket waiting in the queue!", true);
+            idDisplayField.setText("Enter ID number");
+            idDisplayField.setForeground(new java.awt.Color(100, 130, 150));
+            return;
+        }
+        
         idNumber = typedId;
-
+        
         refreshConfirmationScreen();
-
         TransitionHelper.fade(cardContainer, "printConfirmPanel");
     }//GEN-LAST:event_continueBtnActionPerformed
 
@@ -725,15 +777,21 @@ public class KioskFrame extends javax.swing.JFrame {
 
     private void confirmFinalBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_confirmFinalBtnActionPerformed
         Ticket newTicket = qManager.generateTicket(selectedCategory, idNumber, selectedOffice);
-
         generatedTicketLbl.setText(newTicket.getTicketNumber());
-
         if (selectedOffice != null && selectedServiceName != null) {
             String formattedOffice = selectedOffice.name().replace("_", " ");
             finalDetailsLbl.setText("<html><center><b>" + formattedOffice + "</b><br>" + selectedServiceName + "</center></html>");
         }
-
         TransitionHelper.fade(cardContainer, "ticketResultPanel");
+        
+        // automatically returns the user to the home screen in 7 seconds
+        javax.swing.Timer autoCloseTimer = new javax.swing.Timer(7000, e -> {
+            if (generatedTicketLbl.getText().equals(newTicket.getTicketNumber())) {
+                btnFinishActionPerformed(null);
+            }
+        });
+        autoCloseTimer.setRepeats(false);
+        autoCloseTimer.start();
     }//GEN-LAST:event_confirmFinalBtnActionPerformed
 
     private void btnFinishActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnFinishActionPerformed

@@ -22,10 +22,59 @@ public class AdminFrame extends javax.swing.JFrame {
         
         seedInitialData();
         refreshDashboard();
+
+        javax.swing.JLabel clockLabel = new javax.swing.JLabel();
+        clockLabel.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 16));
+        clockLabel.setForeground(new java.awt.Color(218, 165, 32)); // Gold text to match your theme
+        clockLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+
+        sidebarPanel.add(clockLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 600, 220, 30));
+
+        // clock timer
+        javax.swing.Timer clockTimer = new javax.swing.Timer(1000, e -> {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("h:mm:ss a");
+            clockLabel.setText(sdf.format(new java.util.Date()));
+        });
+        clockTimer.start();
         
-        // Auto-refresh dashboard from MongoDB every 2 seconds
-        javax.swing.Timer timer = new javax.swing.Timer(2000, e -> refreshDashboard());
-        timer.start();
+        RoundedButton btnReset = new RoundedButton("Reset Queue", 30);
+        btnReset.setBackground(new java.awt.Color(255, 50, 50)); // Red for danger/reset
+        btnReset.setForeground(java.awt.Color.WHITE);
+        btnReset.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 16));
+        btnReset.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+
+        // Place it safely between the Nav buttons and the Clock
+        sidebarPanel.add(btnReset, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 540, 220, 45));
+
+        btnReset.addActionListener(e -> {
+            boolean confirm = AlertBox.showConfirm(this, "Reset Queue", "Clear all tickets for the day?");
+            if (confirm) {
+                queueManager.clearAllTickets();
+                refreshDashboard();
+            }
+        });
+        
+        javax.swing.Timer inactivityTimer = new javax.swing.Timer(30000, e -> {
+            // 1. Hide the admin dashboard instantly
+            this.setVisible(false);
+
+            // 2. Spawn the login screen and show the timeout warning
+            java.awt.EventQueue.invokeLater(() -> {
+                LoginFrame login = new LoginFrame();
+                login.setVisible(true);
+                login.requestFocus();
+                this.dispose();
+
+                // Alert the user *after* the login screen appears
+                AlertBox.show(login, "Session Expired", "You were logged out due to inactivity.", false);
+            });
+        });
+        inactivityTimer.setRepeats(false);
+        inactivityTimer.start();
+
+        java.awt.Toolkit.getDefaultToolkit().addAWTEventListener(event -> {
+            inactivityTimer.restart();
+        }, java.awt.AWTEvent.KEY_EVENT_MASK | java.awt.AWTEvent.MOUSE_EVENT_MASK | java.awt.AWTEvent.MOUSE_MOTION_EVENT_MASK);
     }
     
     // Formats UserCategory enum
@@ -67,9 +116,10 @@ public class AdminFrame extends javax.swing.JFrame {
     // Adds sample tickets to MongoDB if database is empty
     private void seedInitialData() {
         if (queueManager.getActiveQueue().isEmpty()) {
-            queueManager.generateTicket(UserCategory.STUDENT_PARENT, "2026-1001", Office.REGISTRAR);
-            queueManager.generateTicket(UserCategory.STUDENT_PARENT, "2026-1002", Office.ADMISSIONS);
-            queueManager.generateTicket(UserCategory.STUDENT_PARENT, "2026-1003", Office.TREASURY);
+            queueManager.generateTicket(UserCategory.STUDENT_PARENT, "2026-100001", Office.REGISTRAR);
+            queueManager.generateTicket(UserCategory.STUDENT_PARENT, "2026-100002", Office.ADMISSIONS);
+            queueManager.generateTicket(UserCategory.STUDENT_PARENT, "2026-100003", Office.TREASURY);
+            queueManager.generateTicket(UserCategory.GUEST, "N/A", Office.GENERAL_INQUIRY);
         }
     }
 
@@ -528,7 +578,7 @@ public class AdminFrame extends javax.swing.JFrame {
         jLabel2.setFont(new java.awt.Font("Montserrat", 1, 14)); // NOI18N
         jLabel2.setForeground(new java.awt.Color(11, 42, 99));
         jLabel2.setText("R-002");
-        queueItem1.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 18, 80, 20));
+        queueItem1.add(jLabel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 18, 110, 20));
 
         jLabel3.setFont(new java.awt.Font("Montserrat", 1, 14)); // NOI18N
         jLabel3.setForeground(new java.awt.Color(11, 42, 99));
@@ -543,7 +593,7 @@ public class AdminFrame extends javax.swing.JFrame {
         jLabel4.setFont(new java.awt.Font("Montserrat", 1, 14)); // NOI18N
         jLabel4.setForeground(new java.awt.Color(11, 42, 99));
         jLabel4.setText("A-004");
-        queueItem2.add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 18, 80, 20));
+        queueItem2.add(jLabel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 18, 110, 20));
 
         jLabel5.setFont(new java.awt.Font("Montserrat", 1, 14)); // NOI18N
         jLabel5.setForeground(new java.awt.Color(11, 42, 99));
@@ -558,7 +608,7 @@ public class AdminFrame extends javax.swing.JFrame {
         jLabel6.setFont(new java.awt.Font("Montserrat", 1, 14)); // NOI18N
         jLabel6.setForeground(new java.awt.Color(11, 42, 99));
         jLabel6.setText("T-001");
-        queueItem3.add(jLabel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 18, 80, 20));
+        queueItem3.add(jLabel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 18, 110, 20));
 
         jLabel7.setFont(new java.awt.Font("Montserrat", 1, 14)); // NOI18N
         jLabel7.setForeground(new java.awt.Color(11, 42, 99));
@@ -751,8 +801,13 @@ public class AdminFrame extends javax.swing.JFrame {
     private void btnLogOutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLogOutActionPerformed
         boolean confirm = AlertBox.showConfirm(this, "Log Out", "Are you sure you want to log out?");
         if (confirm) {
-            new LoginFrame().setVisible(true);
-            this.dispose();
+            LoginFrame login = new LoginFrame();
+            login.setVisible(true);
+            javax.swing.Timer killTimer = new javax.swing.Timer(250, e -> {
+                this.dispose();
+            });
+            killTimer.setRepeats(false);
+            killTimer.start();
         }
     }//GEN-LAST:event_btnLogOutActionPerformed
 

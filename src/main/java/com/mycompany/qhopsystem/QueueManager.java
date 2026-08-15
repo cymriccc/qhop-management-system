@@ -8,7 +8,10 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 import org.bson.Document;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 public class QueueManager {
@@ -17,157 +20,156 @@ public class QueueManager {
     private MongoDatabase database;
     private MongoCollection<Document> collection;
 
+    // Pulls from system environment, defaults to local dev settings if not found
+    private final String MONGO_URI = System.getenv("MONGO_URI") != null 
+            ? System.getenv("MONGO_URI") 
+            : "mongodb+srv://dinglecarlosebastian_db_user:Hv7kNw66eQu3BLxU@qhop-management-system.jssvjwk.mongodb.net/?retryWrites=true&w=majority";
+    private final String SECRET_KEY = System.getProperty("APP_KEY");
     public QueueManager() {
-        // Connects to local MongoDB default port
-        this.mongoClient = MongoClients.create("mongodb://localhost:27017");
-        this.database = mongoClient.getDatabase("qhop_db");
-        this.collection = database.getCollection("tickets");
+        try {
+            if (SECRET_KEY == null || SECRET_KEY.length() != 16) {
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    AlertBox.show(null, "Security Fatal Error", "CRITICAL: APP_KEY environment variable is missing or not exactly 16 characters!", true);
+                });
+                System.exit(1);
+            }
+            
+            this.mongoClient = MongoClients.create(MONGO_URI);
+            this.database = mongoClient.getDatabase("qhop_db");
+            this.database.runCommand(new Document("ping", 1));
+            this.collection = database.getCollection("tickets");
+        } catch (Exception e) {
+            AlertBox.show(null, "Database Offline", "Cannot connect to MongoDB. Check URI and network.", true);
+            System.exit(1);
+        }
     }
-    
+
+    private String encryptID(String rawId) {
+        if (rawId.equals("N/A")) return rawId;
+        try {
+            SecretKeySpec key = new SecretKeySpec(SECRET_KEY.getBytes(), "AES");
+            Cipher cipher = Cipher.getInstance("AES");
+            cipher.init(Cipher.ENCRYPT_MODE, key);
+            return Base64.getEncoder().encodeToString(cipher.doFinal(rawId.getBytes()));
+        } catch (Exception e) { return rawId; } 
+    }
+
+    private String decryptID(String encryptedId) {
+        if (encryptedId.equals("N/A")) return encryptedId;
+        try {
+            SecretKeySpec key = new SecretKeySpec(SECRET_KEY.getBytes(), "AES");
+            Cipher cipher = Cipher.getInstance("AES");
+            cipher.init(Cipher.DECRYPT_MODE, key);
+            return new String(cipher.doFinal(Base64.getDecoder().decode(encryptedId)));
+        } catch (Exception e) { return encryptedId; }
+    }
+
+    public boolean hasActiveTicket(String idNumber) {
+        if (idNumber == null || idNumber.equals("N/A")) return false;
+        return collection.find(Filters.and(
+                Filters.eq("idNumber", encryptID(idNumber)),
+                Filters.ne("status", TicketStatus.COMPLETED.name())
+        )).first() != null;
+    }
+
     public long getCompletedCount() {
-        return collection.countDocuments(com.mongodb.client.model.Filters.eq("status", TicketStatus.COMPLETED.name()));
+        return collection.countDocuments(Filters.eq("status", TicketStatus.COMPLETED.name()));
     }
-    
-    // Generate a new ticket and save to MongoDB
+
     public Ticket generateTicket(UserCategory category, String idNumber, Office initialOffice) {
         String prefix = initialOffice.name().substring(0, 1);
-
-        // Count existing tickets to generate the next number dynamically
-        long count = collection.countDocuments() + 1;
+        long count = collection.countDocuments(Filters.eq("initialOffice", initialOffice.name())) + 1;
         String ticketNum = prefix + "-" + String.format("%03d", count);
 
-        // Create BSON Document for MongoDB
         Document doc = new Document("ticketNumber", ticketNum)
                 .append("category", category.name())
-                .append("idNumber", idNumber)
+                .append("idNumber", encryptID(idNumber))
                 .append("initialOffice", initialOffice.name())
                 .append("currentOffice", initialOffice.name())
-                .append("status", TicketStatus.WAITING.name());
+                .append("status", TicketStatus.WAITING.name())
+                .append("timestamp", java.time.LocalDateTime.now().toString());
 
         collection.insertOne(doc);
-
         return new Ticket(ticketNum, category, idNumber, initialOffice);
     }
 
-    // Admin calls the next person in line
+    public void clearAllTickets() {
+        collection.deleteMany(new Document());
+    }
+
     public Ticket callNext(Office office) {
         Document query = new Document("status", TicketStatus.WAITING.name());
-
-        // Only filter by office if an office was specified
-        if (office != null) {
-            query.append("currentOffice", office.name());
-        }
-
+        if (office != null) query.append("currentOffice", office.name());
+        
         Document doc = collection.find(query).first();
-
         if (doc != null) {
-            // Update status to SERVING in the database
-            collection.updateOne(
-                    Filters.eq("_id", doc.getObjectId("_id")),
-                    Updates.set("status", TicketStatus.SERVING.name())
-            );
+            collection.updateOne(Filters.eq("_id", doc.getObjectId("_id")), Updates.set("status", TicketStatus.SERVING.name()));
             return mapDocumentToTicket(doc);
         }
         return null;
     }
 
-    // Transfer Feature
     public boolean transferTicket(String ticketNumber, Office destinationOffice) {
-        Document query = new Document("ticketNumber", ticketNumber);
-        Document doc = collection.find(query).first();
-
+        Document doc = collection.find(new Document("ticketNumber", ticketNumber)).first();
         if (doc != null) {
-            collection.updateOne(
-                    Filters.eq("ticketNumber", ticketNumber),
-                    Updates.combine(
-                            Updates.set("currentOffice", destinationOffice.name()),
-                            Updates.set("status", TicketStatus.WAITING.name())
-                    )
-            );
+            collection.updateOne(Filters.eq("ticketNumber", ticketNumber), Updates.combine(
+                    Updates.set("currentOffice", destinationOffice.name()),
+                    Updates.set("status", TicketStatus.WAITING.name())
+            ));
             return true;
         }
         return false;
     }
 
-    // Mark transaction as done
     public void completeTransaction(String ticketNumber) {
-        collection.updateOne(
-                Filters.eq("ticketNumber", ticketNumber),
-                Updates.set("status", TicketStatus.COMPLETED.name())
-        );
+        collection.updateOne(Filters.eq("ticketNumber", ticketNumber), Updates.set("status", TicketStatus.COMPLETED.name()));
     }
 
-    // Pull the active queue to display in your UI lists
     public List<Ticket> getActiveQueue() {
         List<Ticket> activeQueue = new ArrayList<>();
-
-        // Get everything that isn't completed
         for (Document doc : collection.find(Filters.ne("status", TicketStatus.COMPLETED.name()))) {
             activeQueue.add(mapDocumentToTicket(doc));
         }
-
         return activeQueue;
     }
-    
-    // Pull archived/completed tickets for the history log
+
     public List<Ticket> getCompletedQueue() {
         List<Ticket> completedQueue = new ArrayList<>();
-
-        // Query MongoDB for tickets where status == COMPLETED
         for (Document doc : collection.find(Filters.eq("status", TicketStatus.COMPLETED.name()))) {
             completedQueue.add(mapDocumentToTicket(doc));
         }
-
         return completedQueue;
     }
-    
-    // Helper to translate MongoDB Documents back into your OOP Ticket objects
+
     private Ticket mapDocumentToTicket(Document doc) {
         Ticket t = new Ticket(
                 doc.getString("ticketNumber"),
                 UserCategory.valueOf(doc.getString("category")),
-                doc.getString("idNumber"),
+                decryptID(doc.getString("idNumber")),
                 Office.valueOf(doc.getString("initialOffice"))
         );
-        // Assuming your Ticket class has a setCurrentOffice and setStatus method
         t.transferTo(Office.valueOf(doc.getString("currentOffice")));
         t.setStatus(TicketStatus.valueOf(doc.getString("status")));
+        if (doc.containsKey("timestamp")) {
+            t.setTimestamp(java.time.LocalDateTime.parse(doc.getString("timestamp")));
+        }
         return t;
     }
-    
-    // Authenticate against MongoDB using BCrypt
-    public boolean authenticateAdmin(String username, String rawPassword) {
-        // Look in a new collection called "users"
-        MongoCollection<Document> usersCollection = database.getCollection("users");
 
-        // Find the user by their username
-        Document user = usersCollection.find(Filters.eq("username", username)).first();
-
-        if (user != null) {
-            // Grab the scrambled password from the database
-            String storedHash = user.getString("password");
-
-            // Let BCrypt compare the raw text they typed with the hash in the DB
-            return org.mindrot.jbcrypt.BCrypt.checkpw(rawPassword, storedHash);
-        }
-
-        return false; // User not found or password didn't match
+    public boolean needsSetup() {
+        return database.getCollection("users").countDocuments() == 0;
     }
-    
-    public void createDefaultAdmin() {
-        com.mongodb.client.MongoCollection<org.bson.Document> usersCollection = database.getCollection("users");
 
-        // Only create it if there are NO users in the database yet
-        if (usersCollection.countDocuments() == 0) {
-            // Hash the password "admin123" using BCrypt
-            String hashedPw = org.mindrot.jbcrypt.BCrypt.hashpw("admin123", org.mindrot.jbcrypt.BCrypt.gensalt());
+    public void createAdmin(String username, String rawPassword) {
+        String hashedPw = org.mindrot.jbcrypt.BCrypt.hashpw(rawPassword, org.mindrot.jbcrypt.BCrypt.gensalt());
+        database.getCollection("users").insertOne(new Document("username", username).append("password", hashedPw));
+    }
 
-            // Save the admin to MongoDB
-            org.bson.Document adminUser = new org.bson.Document("username", "admin")
-                    .append("password", hashedPw);
-
-            usersCollection.insertOne(adminUser);
-            System.out.println("Default admin securely created in MongoDB!");
+    public boolean authenticateAdmin(String username, String rawPassword) {
+        Document user = database.getCollection("users").find(Filters.eq("username", username)).first();
+        if (user != null) {
+            return org.mindrot.jbcrypt.BCrypt.checkpw(rawPassword, user.getString("password"));
         }
+        return false; 
     }
 }

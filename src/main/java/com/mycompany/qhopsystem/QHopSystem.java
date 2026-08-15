@@ -8,10 +8,9 @@ public class QHopSystem {
             // Build an undecorated, modern launcher frame programmatically
             javax.swing.JFrame launcher = new javax.swing.JFrame();
             launcher.setUndecorated(true);
-            launcher.setSize(450, 350);
-            
-            // BRINGING THIS BACK: Physically clip the corners
-            launcher.setShape(new java.awt.geom.RoundRectangle2D.Double(0, 0, 450, 350, 40, 40));
+            launcher.setSize(450, 400);
+
+            launcher.setShape(new java.awt.geom.RoundRectangle2D.Double(0, 0, 450, 400, 40, 40));
             launcher.setLocationRelativeTo(null);
             
             // Dark slate background
@@ -40,7 +39,9 @@ public class QHopSystem {
             btnAdmin.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
             btnAdmin.addActionListener(e -> {
                 new LoginFrame().setVisible(true);
-                launcher.dispose();
+                javax.swing.Timer killTimer = new javax.swing.Timer(250, evt -> launcher.dispose());
+                killTimer.setRepeats(false);
+                killTimer.start();
             });
             bgPanel.add(btnAdmin);
 
@@ -52,11 +53,26 @@ public class QHopSystem {
             btnKiosk.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
             btnKiosk.addActionListener(e -> {
                 new KioskFrame().setVisible(true);
-                launcher.dispose();
+                javax.swing.Timer killTimer = new javax.swing.Timer(250, evt -> launcher.dispose());
+                killTimer.setRepeats(false);
+                killTimer.start();
             });
             bgPanel.add(btnKiosk);
             
-            // Exit button
+            RoundedButton btnTV = new RoundedButton("TV Queue Display", 30);
+            btnTV.setBackground(new java.awt.Color(240, 244, 248));
+            btnTV.setForeground(new java.awt.Color(11, 42, 99));
+            btnTV.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 16));
+            btnTV.setBounds(50, 300, 350, 55);
+            btnTV.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+            btnTV.addActionListener(e -> {
+                new DisplayFrame().setVisible(true);
+                javax.swing.Timer killTimer = new javax.swing.Timer(250, evt -> launcher.dispose());
+                killTimer.setRepeats(false);
+                killTimer.start();
+            });
+            bgPanel.add(btnTV);
+            
             RoundedButton btnExit = new RoundedButton("X", 20);
             btnExit.setBackground(new java.awt.Color(255, 50, 50));
             btnExit.setForeground(java.awt.Color.WHITE);

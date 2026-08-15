@@ -116,4 +116,86 @@ public class AlertBox {
         
         return dialog;
     }
+    
+    public static String showServicePicker(javax.swing.JFrame parent, Office office, UserCategory category) {
+        String title = (category == UserCategory.STUDENT_PARENT) ? "Student Service" : "Staff Service";
+        javax.swing.JDialog dialog = createBaseDialog(parent, title, "Select your purpose of visit:", false, 260);
+        RoundedPanel container = (RoundedPanel) dialog.getContentPane().getComponent(0);
+
+        String[] options;
+
+        if (category == UserCategory.STUDENT_PARENT) {
+            // Student-specific purposes
+            if (office == Office.REGISTRAR) {
+                options = new String[]{
+                    "Request Official Transcript of Records (TOR)",
+                    "Certificate of Enrollment / Good Moral",
+                    "Diploma / Graduation Application",
+                    "Cross-Enrollment or Add/Drop Form Approval"
+                };
+            } else if (office == Office.ADMISSIONS) {
+                options = new String[]{
+                    "New Student Admission Inquiry",
+                    "Entrance Exam Registration / Schedule",
+                    "Submission of Admission Credentials",
+                    "Transferee Evaluation"
+                };
+            } else if (office == Office.TREASURY) {
+                options = new String[]{
+                    "Tuition Fee Payment / Assessment",
+                    "Request for Statement of Account",
+                    "Refund Processing",
+                    "Scholarship / Discount Validation"
+                };
+            } else {
+                options = new String[]{"General Campus Inquiry", "Campus Tour / Information"};
+            }
+        } else {
+            // Staff/Employee-specific purposes (your reference list)
+            if (office == Office.TREASURY) {
+                options = new String[]{
+                    "Expense reimbursement or liquidation",
+                    "Department budget requests or cash advances",
+                    "Salary payments or payroll inquiries"
+                };
+            } else if (office == Office.REGISTRAR) {
+                options = new String[]{
+                    "Grade sheet submission or corrections",
+                    "Request for official records (COE, service records)",
+                    "Student clearance and prerequisite approvals"
+                };
+            } else if (office == Office.ADMISSIONS) {
+                options = new String[]{
+                    "Department applicant evaluation and interview",
+                    "Submission of departmental entrance requirements",
+                    "Employee-dependent discount or scholarship"
+                };
+            } else {
+                options = new String[]{"General Inquiry", "Administrative Support"};
+            }
+        }
+
+        final String[] result = {options[0]};
+
+        javax.swing.JComboBox<String> dropdown = new javax.swing.JComboBox<>(options);
+        dropdown.setFont(new java.awt.Font("Montserrat", java.awt.Font.PLAIN, 12));
+        dropdown.setBounds(20, 120, 360, 40);
+        container.add(dropdown);
+
+        RoundedButton btnSelect = new RoundedButton("CONTINUE", 20);
+        btnSelect.setBackground(new java.awt.Color(218, 165, 32));
+        btnSelect.setForeground(new java.awt.Color(11, 42, 99));
+        btnSelect.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 14));
+        btnSelect.setBounds(130, 190, 140, 45);
+        btnSelect.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnSelect.addActionListener(e -> {
+            result[0] = (String) dropdown.getSelectedItem();
+            dialog.dispose();
+        });
+
+        container.add(btnSelect);
+        dialog.setVisible(true);
+
+        return result[0];
+    }
 }

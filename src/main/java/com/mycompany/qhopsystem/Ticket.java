@@ -28,7 +28,11 @@ public class Ticket {
         this.status = TicketStatus.WAITING; // Reset status so the new office sees them waiting
         this.timestamp = LocalDateTime.now(); // Reset timestamp for the new queue line
     }
-
+    
+    public void setTimestamp(java.time.LocalDateTime timestamp) {
+        this.timestamp = timestamp;
+    }
+    
     // --- GETTERS & SETTERS ---
 
     public String getTicketNumber() {

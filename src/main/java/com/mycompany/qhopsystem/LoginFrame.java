@@ -4,12 +4,25 @@ public class LoginFrame extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(LoginFrame.class.getName());
     private QueueManager queueManager;
+    private int strikeCount = 0;
 
     public LoginFrame() {
         initComponents();
         this.queueManager = new QueueManager();
         
-        queueManager.createDefaultAdmin();
+        if (queueManager.needsSetup()) {
+            jLabel4.setText("Initial Setup");
+            btnLogin.setText("CREATE ADMIN");
+        }
+        this.addWindowFocusListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowGainedFocus(java.awt.event.WindowEvent e) {
+                txtUsername.requestFocusInWindow();
+            }
+        });
+        
+        txtUsername.addActionListener(this::btnLoginActionPerformed);
+        txtPassword.addActionListener(this::btnLoginActionPerformed);
     }
 
     @SuppressWarnings("unchecked")
@@ -97,18 +110,52 @@ public class LoginFrame extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnLoginActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLoginActionPerformed
-        String username = txtUsername.getText();
+        String username = txtUsername.getText().trim();
         String password = new String(txtPassword.getPassword());
 
-        // Check credentials
-        if (queueManager.authenticateAdmin(username, password)) {
+        if (username.isEmpty() || password.isEmpty()) {
+            AlertBox.show(this, "Error", "Fields cannot be blank.", true);
+            return;
+        }
 
+        // Setup Mode
+        if (queueManager.needsSetup()) {
+            queueManager.createAdmin(username, password);
+            AlertBox.show(this, "Setup Complete", "Admin account secured. You may now log in.", false);
+
+            // Revert UI back to normal login state
+            jLabel4.setText("Admin Sign In");
+            btnLogin.setText("LOGIN");
+            txtPassword.setText("");
+            return;
+        }
+
+        // Normal Login Mode
+        if (queueManager.authenticateAdmin(username, password)) {
             AlertBox.show(this, "Success", "Login successful! Welcome back.", false);
-            
-            new AdminFrame().setVisible(true);
-            this.dispose();
+
+            java.awt.EventQueue.invokeLater(() -> {
+                AdminFrame admin = new AdminFrame();
+                admin.setVisible(true);
+                admin.requestFocus();
+                this.dispose();
+            });
         } else {
-            AlertBox.show(this, "Login Failed", "Invalid Username or Password!", true);
+            // anti brute force
+            strikeCount++;
+            if (strikeCount >= 5) {
+                AlertBox.show(this, "Locked Out", "Too many failed attempts. Locked for 60 seconds.", true);
+                btnLogin.setEnabled(false); // Kill the login button
+
+                javax.swing.Timer lockTimer = new javax.swing.Timer(60000, e -> {
+                    btnLogin.setEnabled(true); // Bring it back to life after 60s
+                    strikeCount = 0;
+                });
+                lockTimer.setRepeats(false);
+                lockTimer.start();
+            } else {
+                AlertBox.show(this, "Login Failed", "Invalid credentials! Attempts remaining: " + (5 - strikeCount), true);
+            }
         }
     }//GEN-LAST:event_btnLoginActionPerformed
 
