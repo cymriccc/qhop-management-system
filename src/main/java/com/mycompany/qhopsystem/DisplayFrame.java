@@ -39,7 +39,6 @@ public class DisplayFrame extends javax.swing.JFrame {
         Ticket serving = null;
         List<Ticket> waiting = new ArrayList<>();
 
-        // Sort out who is serving and who is waiting
         for (Ticket t : activeTickets) {
             if (t.getStatus() == TicketStatus.SERVING && serving == null) {
                 serving = t;
@@ -48,7 +47,6 @@ public class DisplayFrame extends javax.swing.JFrame {
             }
         }
 
-        // Update the big "Now Serving" block
         if (serving != null) {
             lblServingTicket.setText(serving.getTicketNumber());
             lblServingOffice.setText("Proceed to: " + serving.getCurrentOffice().name().replace("_", " "));
@@ -56,12 +54,11 @@ public class DisplayFrame extends javax.swing.JFrame {
             if (!serving.getTicketNumber().equals(lastCalledTicket)) {
                 lastCalledTicket = serving.getTicketNumber();
 
-                // Flash the panel Gold for 300ms to grab attention!
-                servingPanel.setBackground(new java.awt.Color(218, 165, 32)); // Gold
-                lblServingTicket.setForeground(new java.awt.Color(255, 255, 255)); // White text
+                servingPanel.setBackground(new java.awt.Color(218, 165, 32));
+                lblServingTicket.setForeground(new java.awt.Color(255, 255, 255));
 
                 javax.swing.Timer flashTimer = new javax.swing.Timer(300, evt -> {
-                    servingPanel.setBackground(new java.awt.Color(240, 244, 248)); // Back to normal
+                    servingPanel.setBackground(new java.awt.Color(240, 244, 248));
                     lblServingTicket.setForeground(new java.awt.Color(218, 165, 32));
                 });
                 flashTimer.setRepeats(false);
@@ -75,7 +72,6 @@ public class DisplayFrame extends javax.swing.JFrame {
 
         JLabel[] waitLabels = {lblWait1, lblWait2, lblWait3, lblWait4, lblWait5};
 
-        // Update the right-side waitlist (Top 5)
         for (int i = 0; i < 5; i++) {
             if (i < waiting.size()) {
                 waitLabels[i].setText(waiting.get(i).getTicketNumber());

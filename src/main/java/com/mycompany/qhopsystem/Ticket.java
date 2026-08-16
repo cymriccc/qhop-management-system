@@ -15,25 +15,25 @@ public class Ticket {
     public Ticket(String ticketNumber, UserCategory category, String idNumber, Office initialOffice) {
         this.ticketNumber = ticketNumber;
         this.category = category;
-        this.idNumber = idNumber; // Can be null or empty for guests
+        this.idNumber = idNumber;
         this.currentOffice = initialOffice;
         
-        this.status = TicketStatus.WAITING; // Always starts as waiting
-        this.timestamp = LocalDateTime.now(); // Records exact time ticket was pulled
+        this.status = TicketStatus.WAITING;
+        this.timestamp = LocalDateTime.now();
     }
 
     // Transfer Logic
     public void transferTo(Office nextOffice) {
         this.currentOffice = nextOffice;
-        this.status = TicketStatus.WAITING; // Reset status so the new office sees them waiting
-        this.timestamp = LocalDateTime.now(); // Reset timestamp for the new queue line
+        this.status = TicketStatus.WAITING;
+        this.timestamp = LocalDateTime.now();
     }
     
     public void setTimestamp(java.time.LocalDateTime timestamp) {
         this.timestamp = timestamp;
     }
     
-    // --- GETTERS & SETTERS ---
+    // GETTERS & SETTERS
 
     public String getTicketNumber() {
         return ticketNumber;

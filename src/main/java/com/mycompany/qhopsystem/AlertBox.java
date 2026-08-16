@@ -4,7 +4,7 @@ import javax.swing.JComboBox;
 
 public class AlertBox {
     
-    // 1. STANDARD ALERT (OK Button)
+    // STANDARD ALERT (OK Button)
     public static void show(javax.swing.JFrame parent, String title, String message, boolean isError) {
         javax.swing.JDialog dialog = createBaseDialog(parent, title, message, isError, 220);
         RoundedPanel container = (RoundedPanel) dialog.getContentPane().getComponent(0);
@@ -21,7 +21,7 @@ public class AlertBox {
         dialog.setVisible(true);
     }
 
-    // 2. CONFIRMATION ALERT (Yes / No) - Returns boolean
+    // CONFIRMATION ALERT (Yes / No)
     public static boolean showConfirm(javax.swing.JFrame parent, String title, String message) {
         javax.swing.JDialog dialog = createBaseDialog(parent, title, message, false, 220);
         RoundedPanel container = (RoundedPanel) dialog.getContentPane().getComponent(0);
@@ -51,7 +51,7 @@ public class AlertBox {
         return result[0];
     }
 
-    // 3. DROPDOWN ALERT (For Q-Hop Transfers) - Returns chosen Office
+    // DROPDOWN ALERT (For Q-Hop Transfers) - Returns chosen Office
     public static Office showOfficePicker(javax.swing.JFrame parent, String currentTicket) {
         javax.swing.JDialog dialog = createBaseDialog(parent, "Transfer Ticket", "Select new office for " + currentTicket + ":", false, 250);
         RoundedPanel container = (RoundedPanel) dialog.getContentPane().getComponent(0);
@@ -86,7 +86,7 @@ public class AlertBox {
         return result[0];
     }
 
-    // Helper method to build the dialog shell
+    // Helper method
     private static javax.swing.JDialog createBaseDialog(javax.swing.JFrame parent, String title, String message, boolean isError, int height) {
         javax.swing.JDialog dialog = new javax.swing.JDialog(parent, true);
         dialog.setUndecorated(true);

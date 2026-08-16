@@ -38,12 +38,11 @@ public class AdminFrame extends javax.swing.JFrame {
         clockTimer.start();
         
         RoundedButton btnReset = new RoundedButton("Reset Queue", 30);
-        btnReset.setBackground(new java.awt.Color(255, 50, 50)); // Red for danger/reset
+        btnReset.setBackground(new java.awt.Color(255, 50, 50));
         btnReset.setForeground(java.awt.Color.WHITE);
         btnReset.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 16));
         btnReset.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
 
-        // Place it safely between the Nav buttons and the Clock
         sidebarPanel.add(btnReset, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 540, 220, 45));
 
         btnReset.addActionListener(e -> {
@@ -55,17 +54,14 @@ public class AdminFrame extends javax.swing.JFrame {
         });
         
         javax.swing.Timer inactivityTimer = new javax.swing.Timer(30000, e -> {
-            // 1. Hide the admin dashboard instantly
             this.setVisible(false);
 
-            // 2. Spawn the login screen and show the timeout warning
             java.awt.EventQueue.invokeLater(() -> {
                 LoginFrame login = new LoginFrame();
                 login.setVisible(true);
                 login.requestFocus();
                 this.dispose();
 
-                // Alert the user *after* the login screen appears
                 AlertBox.show(login, "Session Expired", "You were logged out due to inactivity.", false);
             });
         });
@@ -123,7 +119,7 @@ public class AdminFrame extends javax.swing.JFrame {
         }
     }
 
-// Pulls real live data from MongoDB and populates the dashboard UI components
+// Pulls real live data from MongoDB and populates the dashboard UI
     public void refreshDashboard() {
         java.util.List<Ticket> activeTickets = queueManager.getActiveQueue();
 
@@ -150,11 +146,10 @@ public class AdminFrame extends javax.swing.JFrame {
         servingTxt.setText(String.valueOf(servingCount));
         completeTxt.setText(String.valueOf(queueManager.getCompletedCount()));
 
-        //z Update Currently Serving Card
+        // Update Currently Serving Card
         if (currentlyServing != null) {
             jLabel9.setText(currentlyServing.getTicketNumber());
 
-            // Formatted cleanly here!
             String officeText = formatOffice(currentlyServing.getCurrentOffice());
             String categoryText = formatCategory(currentlyServing.getCategory());
 
@@ -283,17 +278,16 @@ public class AdminFrame extends javax.swing.JFrame {
                 formatOffice(t.getCurrentOffice()),
                 formatCategory(t.getCategory()),
                 t.getIdNumber(),
-                t.getStatus().name() // Will explicitly say "COMPLETED"
+                t.getStatus().name()
             });
         }
     }
     
     private void setActiveNavButton(javax.swing.JButton activeBtn) {
-        java.awt.Color defaultBg = new java.awt.Color(15, 23, 42);   // Dark Slate
-        java.awt.Color defaultFg = new java.awt.Color(255, 255, 255); // White text
-
-        java.awt.Color activeBg = new java.awt.Color(218, 165, 32);   // Gold
-        java.awt.Color activeFg = new java.awt.Color(11, 42, 99);     // Navy text
+        java.awt.Color defaultBg = new java.awt.Color(15, 23, 42);
+        java.awt.Color defaultFg = new java.awt.Color(255, 255, 255);
+        java.awt.Color activeBg = new java.awt.Color(218, 165, 32);
+        java.awt.Color activeFg = new java.awt.Color(11, 42, 99);
 
         btnNavDashboard.setBackground(defaultBg);
         btnNavDashboard.setForeground(defaultFg);
