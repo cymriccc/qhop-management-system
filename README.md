@@ -113,7 +113,28 @@ QHop_Release/
 
 ---
 
-### 3. Building from Source (Apache NetBeans)
+### 3. macOS Deployment
+
+1. Place `QHopSystem-1.0-SNAPSHOT.jar` and `launch.command` in the same directory.
+2. Ensure `launch.command` contains the following:
+
+    ```bash
+    #!/bin/bash
+    cd "$(dirname "$0")"
+    java -DAPP_KEY=1234567890ABCDEF -jar QHopSystem-1.0-SNAPSHOT.jar
+    ```
+    *(Note: The `cd "$(dirname "$0")"` line ensures the script runs in the correct folder when double-clicked).*
+
+3. Grant execute permissions via terminal (run once):
+   * Open the **Terminal** app.
+   * Type `chmod +x ` (leave a space at the end).
+   * Drag and drop the `launch.command` file into the terminal window and hit **Enter**.
+
+4. Double-click `launch.command` to run the application. (If macOS warns about an unidentified developer, right-click the file and select **Open**).
+
+---
+
+### 4. Building from Source (Apache NetBeans)
 
 1. Clone or open the project directory in **Apache NetBeans**.
 2. Ensure the main class is set to `com.mycompany.qhopsystem.QHopSystem`.
