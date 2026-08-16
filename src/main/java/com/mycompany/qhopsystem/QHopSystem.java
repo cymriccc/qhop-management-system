@@ -4,16 +4,13 @@ public class QHopSystem {
 
     public static void main(String[] args) {
         java.awt.EventQueue.invokeLater(() -> {
-            
-            // Build an undecorated, modern launcher frame programmatically
             javax.swing.JFrame launcher = new javax.swing.JFrame();
             launcher.setUndecorated(true);
             launcher.setSize(450, 400);
 
             launcher.setShape(new java.awt.geom.RoundRectangle2D.Double(0, 0, 450, 400, 40, 40));
             launcher.setLocationRelativeTo(null);
-            
-            // Dark slate background
+
             RoundedPanel bgPanel = new RoundedPanel(40);
             bgPanel.setBackground(new java.awt.Color(15, 23, 42)); 
             bgPanel.setLayout(null);
