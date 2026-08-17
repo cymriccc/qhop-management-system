@@ -77,6 +77,7 @@ QHop_Release/
 ├── QHopSystem-1.0-SNAPSHOT.jar
 ├── launch.bat                  # One-click launcher for Windows
 ├── launch.sh                   # One-click launcher for Linux
+├── launch.command              # One-click launcher for MacOS
 └── README.md
 ```
 
