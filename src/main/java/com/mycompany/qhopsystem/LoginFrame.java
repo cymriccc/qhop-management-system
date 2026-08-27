@@ -1,4 +1,8 @@
 package com.mycompany.qhopsystem;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
 
 public class LoginFrame extends javax.swing.JFrame {
     
@@ -9,6 +13,9 @@ public class LoginFrame extends javax.swing.JFrame {
     public LoginFrame() {
         initComponents();
         this.queueManager = new QueueManager();
+        
+        setCharacterLimit(txtUsername, 20);
+        setCharacterLimit(txtPassword, 30);
         
         if (queueManager.needsSetup()) {
             jLabel4.setText("Initial Setup");
@@ -24,7 +31,33 @@ public class LoginFrame extends javax.swing.JFrame {
         txtUsername.addActionListener(this::btnLoginActionPerformed);
         txtPassword.addActionListener(this::btnLoginActionPerformed);
     }
+    
+    private void setCharacterLimit(javax.swing.text.JTextComponent component, int maxChars) {
+        ((AbstractDocument) component.getDocument()).setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
+                if (string == null) {
+                    return;
+                }
+                if ((fb.getDocument().getLength() + string.length()) <= maxChars) {
+                    super.insertString(fb, offset, string, attr);
+                }
+            }
 
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
+                if (text == null) {
+                    return;
+                }
+                int currentLength = fb.getDocument().getLength();
+                int newLength = currentLength - length + text.length();
+                if (newLength <= maxChars) {
+                    super.replace(fb, offset, length, text, attrs);
+                }
+            }
+        });
+    }
+    
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -165,7 +198,6 @@ public class LoginFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_btnCloseActionPerformed
 
     public static void main(String args[]) {
-
         java.awt.EventQueue.invokeLater(() -> new LoginFrame().setVisible(true));
     }
 

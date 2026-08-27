@@ -1,5 +1,6 @@
 package com.mycompany.qhopsystem;
 
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JLabel;
@@ -37,26 +38,37 @@ public class DisplayFrame extends javax.swing.JFrame {
     private void updateScreen() {
         List<Ticket> activeTickets = queueManager.getActiveQueue();
         Ticket serving = null;
-        List<Ticket> waiting = new ArrayList<>();
-
+        
+        java.util.List<Ticket> regQueue = new java.util.ArrayList<>();
+        java.util.List<Ticket> admQueue = new java.util.ArrayList<>();
+        java.util.List<Ticket> treQueue = new java.util.ArrayList<>();
+        java.util.List<Ticket> genQueue = new java.util.ArrayList<>();
+        
         for (Ticket t : activeTickets) {
-            if (t.getStatus() == TicketStatus.SERVING && serving == null) {
+            if (t.getStatus() == TicketStatus.SERVING) {
                 serving = t;
             } else if (t.getStatus() == TicketStatus.WAITING) {
-                waiting.add(t);
+                if (t.getCurrentOffice() == Office.REGISTRAR && regQueue.size() < 3) {
+                    regQueue.add(t);
+                } else if (t.getCurrentOffice() == Office.ADMISSIONS && admQueue.size() < 3) {
+                    admQueue.add(t);
+                } else if (t.getCurrentOffice() == Office.TREASURY && treQueue.size() < 3) {
+                    treQueue.add(t);
+                } else if (t.getCurrentOffice() == Office.GENERAL_INQUIRY && genQueue.size() < 3) {
+                    genQueue.add(t);
+                }
             }
         }
-
+        
         if (serving != null) {
             lblServingTicket.setText(serving.getTicketNumber());
             lblServingOffice.setText("Proceed to: " + serving.getCurrentOffice().name().replace("_", " "));
             
             if (!serving.getTicketNumber().equals(lastCalledTicket)) {
                 lastCalledTicket = serving.getTicketNumber();
-
                 servingPanel.setBackground(new java.awt.Color(218, 165, 32));
                 lblServingTicket.setForeground(new java.awt.Color(255, 255, 255));
-
+                
                 javax.swing.Timer flashTimer = new javax.swing.Timer(300, evt -> {
                     servingPanel.setBackground(new java.awt.Color(240, 244, 248));
                     lblServingTicket.setForeground(new java.awt.Color(218, 165, 32));
@@ -69,18 +81,26 @@ public class DisplayFrame extends javax.swing.JFrame {
             lblServingOffice.setText("Awaiting Next Customer");
             lastCalledTicket = "";
         }
-
-        JLabel[] waitLabels = {lblWait1, lblWait2, lblWait3, lblWait4, lblWait5};
-
-        for (int i = 0; i < 5; i++) {
-            if (i < waiting.size()) {
-                waitLabels[i].setText(waiting.get(i).getTicketNumber());
-            } else {
-                waitLabels[i].setText("---");
-            }
-        }
+        
+        lblRegNext.setText(formatQueueList(regQueue));
+        lblAdmNext.setText(formatQueueList(admQueue));
+        lblTreNext.setText(formatQueueList(treQueue));
+        lblGenNext.setText(formatQueueList(genQueue));
     }
 
+    private String formatQueueList(java.util.List<Ticket> queue) {
+        if (queue.isEmpty()) {
+            return "---";
+        }
+        
+        StringBuilder sb = new StringBuilder("<html><center>");
+        for (Ticket t : queue) {
+            sb.append(t.getTicketNumber()).append("<br>");
+        }
+        sb.append("</center></html>");
+        return sb.toString();
+    }
+    
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -96,16 +116,19 @@ public class DisplayFrame extends javax.swing.JFrame {
         lblServingOffice = new javax.swing.JLabel();
         waitingPanel = new com.mycompany.qhopsystem.RoundedPanel(40);
         jLabel3 = new javax.swing.JLabel();
-        jPanel1 = new com.mycompany.qhopsystem.RoundedPanel(20);
-        lblWait1 = new javax.swing.JLabel();
-        jPanel2 = new com.mycompany.qhopsystem.RoundedPanel(20);
-        lblWait2 = new javax.swing.JLabel();
-        jPanel3 = new com.mycompany.qhopsystem.RoundedPanel(20);
-        lblWait3 = new javax.swing.JLabel();
-        jPanel4 = new com.mycompany.qhopsystem.RoundedPanel(20);
-        lblWait4 = new javax.swing.JLabel();
-        jPanel5 = new com.mycompany.qhopsystem.RoundedPanel(20);
-        lblWait5 = new javax.swing.JLabel();
+        jPanel6 = new javax.swing.JPanel();
+        jPanel1 = new com.mycompany.qhopsystem.RoundedPanel(30);
+        jLabel4 = new javax.swing.JLabel();
+        lblRegNext = new javax.swing.JLabel();
+        jPanel2 = new com.mycompany.qhopsystem.RoundedPanel(30);
+        jLabel6 = new javax.swing.JLabel();
+        lblTreNext = new javax.swing.JLabel();
+        jPanel3 = new com.mycompany.qhopsystem.RoundedPanel(30);
+        jLabel7 = new javax.swing.JLabel();
+        lblAdmNext = new javax.swing.JLabel();
+        jPanel7 = new com.mycompany.qhopsystem.RoundedPanel(30);
+        jLabel8 = new javax.swing.JLabel();
+        lblGenNext = new javax.swing.JLabel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setUndecorated(true);
@@ -165,60 +188,86 @@ public class DisplayFrame extends javax.swing.JFrame {
         jLabel3.setText("NEXT IN QUEUE");
         waitingPanel.add(jLabel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 30, 460, 40));
 
-        jPanel1.setBackground(new java.awt.Color(15, 23, 42));
-        jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jPanel6.setOpaque(false);
+        jPanel6.setLayout(new java.awt.GridLayout(2, 2, 15, 15));
 
-        lblWait1.setFont(new java.awt.Font("Montserrat", 1, 32)); // NOI18N
-        lblWait1.setForeground(new java.awt.Color(255, 255, 255));
-        lblWait1.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        lblWait1.setText("---");
-        jPanel1.add(lblWait1, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 400, 70));
+        jPanel1.setBackground(new java.awt.Color(240, 244, 248));
+        jPanel1.setLayout(new java.awt.BorderLayout());
 
-        waitingPanel.add(jPanel1, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 100, 400, 70));
+        jLabel4.setFont(new java.awt.Font("Montserrat", 1, 18)); // NOI18N
+        jLabel4.setForeground(new java.awt.Color(11, 42, 99));
+        jLabel4.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel4.setText("REGISTRAR");
+        jLabel4.setBorder(javax.swing.BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        jPanel1.add(jLabel4, java.awt.BorderLayout.NORTH);
 
-        jPanel2.setBackground(new java.awt.Color(15, 23, 42));
-        jPanel2.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        lblRegNext.setFont(new java.awt.Font("Montserrat ExtraBold", 0, 24)); // NOI18N
+        lblRegNext.setForeground(new java.awt.Color(218, 165, 32));
+        lblRegNext.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        lblRegNext.setText("---");
+        lblRegNext.setVerticalAlignment(javax.swing.SwingConstants.TOP);
+        jPanel1.add(lblRegNext, java.awt.BorderLayout.CENTER);
 
-        lblWait2.setFont(new java.awt.Font("Montserrat", 1, 32)); // NOI18N
-        lblWait2.setForeground(new java.awt.Color(255, 255, 255));
-        lblWait2.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        lblWait2.setText("---");
-        jPanel2.add(lblWait2, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 400, 70));
+        jPanel6.add(jPanel1);
 
-        waitingPanel.add(jPanel2, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 190, 400, 70));
+        jPanel2.setBackground(new java.awt.Color(240, 244, 248));
+        jPanel2.setLayout(new java.awt.BorderLayout());
 
-        jPanel3.setBackground(new java.awt.Color(15, 23, 42));
-        jPanel3.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jLabel6.setFont(new java.awt.Font("Montserrat", 1, 18)); // NOI18N
+        jLabel6.setForeground(new java.awt.Color(11, 42, 99));
+        jLabel6.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel6.setText("TREASURY");
+        jLabel6.setBorder(javax.swing.BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        jPanel2.add(jLabel6, java.awt.BorderLayout.NORTH);
 
-        lblWait3.setFont(new java.awt.Font("Montserrat", 1, 32)); // NOI18N
-        lblWait3.setForeground(new java.awt.Color(255, 255, 255));
-        lblWait3.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        lblWait3.setText("---");
-        jPanel3.add(lblWait3, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 400, 70));
+        lblTreNext.setFont(new java.awt.Font("Montserrat ExtraBold", 0, 24)); // NOI18N
+        lblTreNext.setForeground(new java.awt.Color(218, 165, 32));
+        lblTreNext.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        lblTreNext.setText("---");
+        lblTreNext.setVerticalAlignment(javax.swing.SwingConstants.TOP);
+        jPanel2.add(lblTreNext, java.awt.BorderLayout.CENTER);
 
-        waitingPanel.add(jPanel3, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 280, 400, 70));
+        jPanel6.add(jPanel2);
 
-        jPanel4.setBackground(new java.awt.Color(15, 23, 42));
-        jPanel4.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jPanel3.setBackground(new java.awt.Color(240, 244, 248));
+        jPanel3.setLayout(new java.awt.BorderLayout());
 
-        lblWait4.setFont(new java.awt.Font("Montserrat", 1, 32)); // NOI18N
-        lblWait4.setForeground(new java.awt.Color(255, 255, 255));
-        lblWait4.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        lblWait4.setText("---");
-        jPanel4.add(lblWait4, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 400, 70));
+        jLabel7.setFont(new java.awt.Font("Montserrat", 1, 18)); // NOI18N
+        jLabel7.setForeground(new java.awt.Color(11, 42, 99));
+        jLabel7.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel7.setText("ADMISSION");
+        jLabel7.setBorder(javax.swing.BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        jPanel3.add(jLabel7, java.awt.BorderLayout.NORTH);
 
-        waitingPanel.add(jPanel4, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 370, 400, 70));
+        lblAdmNext.setFont(new java.awt.Font("Montserrat ExtraBold", 0, 24)); // NOI18N
+        lblAdmNext.setForeground(new java.awt.Color(218, 165, 32));
+        lblAdmNext.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        lblAdmNext.setText("---");
+        lblAdmNext.setVerticalAlignment(javax.swing.SwingConstants.TOP);
+        jPanel3.add(lblAdmNext, java.awt.BorderLayout.CENTER);
 
-        jPanel5.setBackground(new java.awt.Color(15, 23, 42));
-        jPanel5.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
+        jPanel6.add(jPanel3);
 
-        lblWait5.setFont(new java.awt.Font("Montserrat", 1, 32)); // NOI18N
-        lblWait5.setForeground(new java.awt.Color(255, 255, 255));
-        lblWait5.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        lblWait5.setText("---");
-        jPanel5.add(lblWait5, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 0, 400, 70));
+        jPanel7.setBackground(new java.awt.Color(240, 244, 248));
+        jPanel7.setLayout(new java.awt.BorderLayout());
 
-        waitingPanel.add(jPanel5, new org.netbeans.lib.awtextra.AbsoluteConstraints(30, 460, 400, 70));
+        jLabel8.setFont(new java.awt.Font("Montserrat", 1, 18)); // NOI18N
+        jLabel8.setForeground(new java.awt.Color(11, 42, 99));
+        jLabel8.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabel8.setText("GENERAL");
+        jLabel8.setBorder(javax.swing.BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        jPanel7.add(jLabel8, java.awt.BorderLayout.NORTH);
+
+        lblGenNext.setFont(new java.awt.Font("Montserrat ExtraBold", 0, 24)); // NOI18N
+        lblGenNext.setForeground(new java.awt.Color(218, 165, 32));
+        lblGenNext.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        lblGenNext.setText("---");
+        lblGenNext.setVerticalAlignment(javax.swing.SwingConstants.TOP);
+        jPanel7.add(lblGenNext, java.awt.BorderLayout.CENTER);
+
+        jPanel6.add(jPanel7);
+
+        waitingPanel.add(jPanel6, new org.netbeans.lib.awtextra.AbsoluteConstraints(40, 110, 380, 400));
 
         bgPanel.add(waitingPanel, new org.netbeans.lib.awtextra.AbsoluteConstraints(780, 100, 460, 560));
 
@@ -245,18 +294,21 @@ public class DisplayFrame extends javax.swing.JFrame {
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
+    private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel6;
+    private javax.swing.JLabel jLabel7;
+    private javax.swing.JLabel jLabel8;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
-    private javax.swing.JPanel jPanel4;
-    private javax.swing.JPanel jPanel5;
+    private javax.swing.JPanel jPanel6;
+    private javax.swing.JPanel jPanel7;
+    private javax.swing.JLabel lblAdmNext;
+    private javax.swing.JLabel lblGenNext;
+    private javax.swing.JLabel lblRegNext;
     private javax.swing.JLabel lblServingOffice;
     private javax.swing.JLabel lblServingTicket;
-    private javax.swing.JLabel lblWait1;
-    private javax.swing.JLabel lblWait2;
-    private javax.swing.JLabel lblWait3;
-    private javax.swing.JLabel lblWait4;
-    private javax.swing.JLabel lblWait5;
+    private javax.swing.JLabel lblTreNext;
     private javax.swing.JPanel servingPanel;
     private javax.swing.JPanel waitingPanel;
     // End of variables declaration//GEN-END:variables

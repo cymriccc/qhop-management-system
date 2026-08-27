@@ -85,7 +85,44 @@ public class AlertBox {
         
         return result[0];
     }
+    
+    public static Office showCallOfficePicker(javax.swing.JFrame parent) {
+        javax.swing.JDialog dialog = createBaseDialog(parent, "Call Next Ticket", "Select office queue to call from:", false, 250);
+        RoundedPanel container = (RoundedPanel) dialog.getContentPane().getComponent(0);
 
+        final Office[] result = {null};
+
+        javax.swing.JComboBox<Office> dropdown = new javax.swing.JComboBox<>(Office.values());
+        dropdown.setFont(new java.awt.Font("Montserrat", java.awt.Font.PLAIN, 14));
+        dropdown.setBounds(60, 120, 280, 40);
+        container.add(dropdown);
+
+        RoundedButton btnCall = new RoundedButton("CALL", 20);
+        btnCall.setBackground(new java.awt.Color(43, 87, 154)); // Slate Blue
+        btnCall.setForeground(java.awt.Color.WHITE);
+        btnCall.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 14));
+        btnCall.setBounds(60, 180, 130, 45);
+        btnCall.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnCall.addActionListener(e -> {
+            result[0] = (Office) dropdown.getSelectedItem();
+            dialog.dispose();
+        });
+
+        RoundedButton btnCancel = new RoundedButton("CANCEL", 20);
+        btnCancel.setBackground(new java.awt.Color(15, 23, 42)); // Deep Slate
+        btnCancel.setForeground(java.awt.Color.WHITE);
+        btnCancel.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 14));
+        btnCancel.setBounds(210, 180, 130, 45);
+        btnCancel.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnCancel.addActionListener(e -> dialog.dispose());
+
+        container.add(btnCall);
+        container.add(btnCancel);
+        dialog.setVisible(true);
+
+        return result[0];
+    }
+    
     // Helper method
     private static javax.swing.JDialog createBaseDialog(javax.swing.JFrame parent, String title, String message, boolean isError, int height) {
         javax.swing.JDialog dialog = new javax.swing.JDialog(parent, true);

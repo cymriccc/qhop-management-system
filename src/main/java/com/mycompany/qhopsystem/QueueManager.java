@@ -120,7 +120,18 @@ public class QueueManager {
         }
         return false;
     }
-
+    
+    public void skipTicket(String ticketNumber) {
+        Document doc = collection.find(new Document("ticketNumber", ticketNumber)).first();
+        if (doc != null) {
+            collection.updateOne(com.mongodb.client.model.Filters.eq("ticketNumber", ticketNumber),
+                    com.mongodb.client.model.Updates.combine(
+                            com.mongodb.client.model.Updates.set("status", TicketStatus.WAITING.name()),
+                            com.mongodb.client.model.Updates.set("timestamp", java.time.LocalDateTime.now().toString())
+                    ));
+        }
+    }
+    
     public void completeTransaction(String ticketNumber) {
         collection.updateOne(Filters.eq("ticketNumber", ticketNumber), Updates.set("status", TicketStatus.COMPLETED.name()));
     }

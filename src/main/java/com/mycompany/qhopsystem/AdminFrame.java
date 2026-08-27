@@ -269,9 +269,20 @@ public class AdminFrame extends javax.swing.JFrame {
         javax.swing.table.DefaultTableModel model = (javax.swing.table.DefaultTableModel) historyTable.getModel();
         model.setRowCount(0);
 
-        // Fetch COMPLETED tickets from MongoDB
+        java.util.List<Ticket> activeTickets = queueManager.getActiveQueue();
+        for (Ticket t : activeTickets) {
+            if (t.getStatus() == TicketStatus.SERVING) {
+                model.addRow(new Object[]{
+                    t.getTicketNumber(),
+                    formatOffice(t.getCurrentOffice()),
+                    formatCategory(t.getCategory()),
+                    t.getIdNumber(),
+                    t.getStatus().name()
+                });
+            }
+        }
+        
         java.util.List<Ticket> finishedTickets = queueManager.getCompletedQueue();
-
         for (Ticket t : finishedTickets) {
             model.addRow(new Object[]{
                 t.getTicketNumber(),
@@ -740,16 +751,26 @@ public class AdminFrame extends javax.swing.JFrame {
             AlertBox.show(this, "Action Failed", "No active ticket to skip!", true);
             return;
         }
-        queueManager.transferTicket(currentTicket, Office.REGISTRAR);
+        queueManager.skipTicket(currentTicket);
         refreshDashboard();
     }//GEN-LAST:event_btnSkipActionPerformed
 
     private void btnCallNextActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCallNextActionPerformed
-        Ticket called = queueManager.callNext(null);
-        if (called == null) {
-            AlertBox.show(this, "Queue Empty", "No waiting tickets in queue!", false);
+        String currentTicket = jLabel9.getText();
+        if (!currentTicket.equals("---")) {
+            AlertBox.show(this, "Finish Current Ticket", "Please Complete, Skip, or Transfer the active ticket before calling a new one.", true);
+            return;
         }
-        refreshDashboard();
+
+        Office selectedOffice = AlertBox.showCallOfficePicker(this);
+        if (selectedOffice != null) {
+            Ticket called = queueManager.callNext(selectedOffice);
+            if (called == null) {
+                String formattedOffice = selectedOffice.name().replace("_", " ");
+                AlertBox.show(this, "Queue Empty", "No waiting tickets in the " + formattedOffice + " queue!", false);
+            }
+            refreshDashboard();
+        }
     }//GEN-LAST:event_btnCallNextActionPerformed
 
     private void btnTransferActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTransferActionPerformed
