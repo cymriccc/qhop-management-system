@@ -122,14 +122,10 @@ public class QueueManager {
     }
     
     public void skipTicket(String ticketNumber) {
-        Document doc = collection.find(new Document("ticketNumber", ticketNumber)).first();
-        if (doc != null) {
-            collection.updateOne(com.mongodb.client.model.Filters.eq("ticketNumber", ticketNumber),
-                    com.mongodb.client.model.Updates.combine(
-                            com.mongodb.client.model.Updates.set("status", TicketStatus.WAITING.name()),
-                            com.mongodb.client.model.Updates.set("timestamp", java.time.LocalDateTime.now().toString())
-                    ));
-        }
+        collection.updateOne(
+                com.mongodb.client.model.Filters.eq("ticketNumber", ticketNumber),
+                com.mongodb.client.model.Updates.set("status", TicketStatus.MISSED.name())
+        );
     }
     
     public void completeTransaction(String ticketNumber) {
@@ -151,7 +147,15 @@ public class QueueManager {
         }
         return completedQueue;
     }
-
+    
+    public java.util.List<Ticket> getMissedQueue() {
+        java.util.List<Ticket> missed = new java.util.ArrayList<>();
+        for (org.bson.Document doc : collection.find(com.mongodb.client.model.Filters.eq("status", TicketStatus.MISSED.name()))) {
+            missed.add(mapDocumentToTicket(doc));
+        }
+        return missed;
+    }
+    
     private Ticket mapDocumentToTicket(Document doc) {
         Ticket t = new Ticket(
                 doc.getString("ticketNumber"),

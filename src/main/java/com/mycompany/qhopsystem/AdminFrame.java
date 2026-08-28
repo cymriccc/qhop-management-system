@@ -5,6 +5,7 @@ public class AdminFrame extends javax.swing.JFrame {
     
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(AdminFrame.class.getName());
     private QueueManager queueManager;
+    private Ticket myCurrentTicket = null;
     
     public AdminFrame() {
         initComponents();
@@ -119,14 +120,11 @@ public class AdminFrame extends javax.swing.JFrame {
         }
     }
 
-// Pulls real live data from MongoDB and populates the dashboard UI
+    // Pulls real live data from MongoDB and populates the dashboard UI
     public void refreshDashboard() {
         java.util.List<Ticket> activeTickets = queueManager.getActiveQueue();
-
         int waitingCount = 0;
         int servingCount = 0;
-
-        Ticket currentlyServing = null;
         java.util.List<Ticket> nextInQueue = new java.util.ArrayList<>();
 
         for (Ticket t : activeTickets) {
@@ -135,9 +133,6 @@ public class AdminFrame extends javax.swing.JFrame {
                 nextInQueue.add(t);
             } else if (t.getStatus() == TicketStatus.SERVING) {
                 servingCount++;
-                if (currentlyServing == null) {
-                    currentlyServing = t;
-                }
             }
         }
 
@@ -146,13 +141,11 @@ public class AdminFrame extends javax.swing.JFrame {
         servingTxt.setText(String.valueOf(servingCount));
         completeTxt.setText(String.valueOf(queueManager.getCompletedCount()));
 
-        // Update Currently Serving Card
-        if (currentlyServing != null) {
-            jLabel9.setText(currentlyServing.getTicketNumber());
-
-            String officeText = formatOffice(currentlyServing.getCurrentOffice());
-            String categoryText = formatCategory(currentlyServing.getCategory());
-
+        // ONLY show the ticket THIS specific computer called
+        if (myCurrentTicket != null) {
+            jLabel9.setText(myCurrentTicket.getTicketNumber());
+            String officeText = formatOffice(myCurrentTicket.getCurrentOffice());
+            String categoryText = formatCategory(myCurrentTicket.getCategory());
             jLabel10.setText("<html><center><b>" + officeText + "</b><br>" + categoryText + "</center></html>");
         } else {
             jLabel9.setText("---");
@@ -284,6 +277,17 @@ public class AdminFrame extends javax.swing.JFrame {
         
         java.util.List<Ticket> finishedTickets = queueManager.getCompletedQueue();
         for (Ticket t : finishedTickets) {
+            model.addRow(new Object[]{
+                t.getTicketNumber(),
+                formatOffice(t.getCurrentOffice()),
+                formatCategory(t.getCategory()),
+                t.getIdNumber(),
+                t.getStatus().name()
+            });
+        }
+        
+        java.util.List<Ticket> missedTickets = queueManager.getMissedQueue();
+        for (Ticket t : missedTickets) {
             model.addRow(new Object[]{
                 t.getTicketNumber(),
                 formatOffice(t.getCurrentOffice()),
@@ -746,12 +750,13 @@ public class AdminFrame extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void btnSkipActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSkipActionPerformed
-        String currentTicket = jLabel9.getText();
-        if (currentTicket.equals("---")) {
+        if (myCurrentTicket == null) {
             AlertBox.show(this, "Action Failed", "No active ticket to skip!", true);
             return;
         }
-        queueManager.skipTicket(currentTicket);
+
+        queueManager.skipTicket(myCurrentTicket.getTicketNumber());
+        myCurrentTicket = null;
         refreshDashboard();
     }//GEN-LAST:event_btnSkipActionPerformed
 
@@ -764,8 +769,8 @@ public class AdminFrame extends javax.swing.JFrame {
 
         Office selectedOffice = AlertBox.showCallOfficePicker(this);
         if (selectedOffice != null) {
-            Ticket called = queueManager.callNext(selectedOffice);
-            if (called == null) {
+            myCurrentTicket = queueManager.callNext(selectedOffice);
+            if (myCurrentTicket == null) {
                 String formattedOffice = selectedOffice.name().replace("_", " ");
                 AlertBox.show(this, "Queue Empty", "No waiting tickets in the " + formattedOffice + " queue!", false);
             }
@@ -774,27 +779,25 @@ public class AdminFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_btnCallNextActionPerformed
 
     private void btnTransferActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnTransferActionPerformed
-        String currentTicket = jLabel9.getText();
-        if (currentTicket.equals("---")) {
+        if (myCurrentTicket == null) {
             AlertBox.show(this, "Action Failed", "No active ticket to transfer!", true);
             return;
         }
-
-        // Uses our new custom Dropdown popup!
-        Office selectedOffice = AlertBox.showOfficePicker(this, currentTicket);
+        Office selectedOffice = AlertBox.showOfficePicker(this, myCurrentTicket.getTicketNumber());
         if (selectedOffice != null) {
-            queueManager.transferTicket(currentTicket, selectedOffice);
+            queueManager.transferTicket(myCurrentTicket.getTicketNumber(), selectedOffice);
+            myCurrentTicket = null;
             refreshDashboard();
         }
     }//GEN-LAST:event_btnTransferActionPerformed
 
     private void btnCompleteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCompleteActionPerformed
-        String currentTicket = jLabel9.getText();
-        if (currentTicket.equals("---")) {
+        if (myCurrentTicket == null) {
             AlertBox.show(this, "Action Failed", "No active ticket to complete!", true);
             return;
         }
-        queueManager.completeTransaction(currentTicket);
+        queueManager.completeTransaction(myCurrentTicket.getTicketNumber());
+        myCurrentTicket = null;
         refreshDashboard();
     }//GEN-LAST:event_btnCompleteActionPerformed
 
