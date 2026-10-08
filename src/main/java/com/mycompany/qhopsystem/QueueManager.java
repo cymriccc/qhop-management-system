@@ -21,13 +21,9 @@ public class QueueManager {
     private MongoCollection<Document> collection;
 
     // Pulls from system environment, defaults to local dev settings if not found
-<<<<<<< HEAD
-    private final String MONGO_URI = System.getenv("MONGO_URI");
-=======
     private final String MONGO_URI = System.getenv("MONGO_URI") != null 
             ? System.getenv("MONGO_URI") 
             : "mongodb+srv://dinglecarlosebastian_db_user:FCbx1hUvstnYmWSk@qhop-management-system.jssvjwk.mongodb.net/?retryWrites=true&w=majority";
->>>>>>> 8abc945 (feat: Final Capstone Defense Build (Master Admin, Audit Logs, Optimization))
     private final String SECRET_KEY = System.getProperty("APP_KEY");
     public QueueManager() {
         try {
@@ -223,9 +219,6 @@ public class QueueManager {
         }
         return false; 
     }
-<<<<<<< HEAD
-}
-=======
     
     public Office getAdminOffice(String username) {
         String lowerUser = username.toLowerCase();
@@ -271,4 +264,4 @@ public class QueueManager {
         return allTickets;
     }
 }
->>>>>>> 8abc945 (feat: Final Capstone Defense Build (Master Admin, Audit Logs, Optimization))
+
