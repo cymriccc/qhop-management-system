@@ -106,6 +106,38 @@ public class KioskFrame extends javax.swing.JFrame {
         idDisplayField.setText(currentText + number);
     }
     
+    private void generateReceipt(Ticket ticket, String serviceName) {
+        try {
+            String userHome = System.getProperty("user.home");
+            java.io.File desktop = new java.io.File(userHome, "Desktop");
+            if (!desktop.exists()) {
+                desktop = new java.io.File(userHome);
+            }
+
+            String filename = "QHop_Receipt_" + ticket.getTicketNumber() + ".txt";
+            java.io.File receipt = new java.io.File(desktop, filename);
+
+            try (java.io.PrintWriter writer = new java.io.PrintWriter(receipt)) {
+                writer.println("=====================================");
+                writer.println("           Q-HOP SYSTEM              ");
+                writer.println("=====================================");
+                writer.println("Ticket Number: " + ticket.getTicketNumber());
+                writer.println("Office: " + ticket.getCurrentOffice().name().replace("_", " "));
+                writer.println("Service: " + (serviceName != null ? serviceName : "General"));
+                writer.println("User Type: " + ticket.getCategory().name().replace("_", " / "));
+                writer.println("ID Number: " + ticket.getIdNumber());
+                writer.println("Date/Time: " + java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                writer.println("=====================================");
+                writer.println("  Please wait for your number to be  ");
+                writer.println("              called.                ");
+                writer.println("=====================================");
+            }
+            AlertBox.show(this, "Receipt Printed", "Digital receipt saved to Desktop.", false);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -627,12 +659,26 @@ public class KioskFrame extends javax.swing.JFrame {
     private void studentBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_studentBtnActionPerformed
         selectedCategory = UserCategory.STUDENT_PARENT;
         selectedServiceName = AlertBox.showServicePicker(this, selectedOffice, selectedCategory);
+        if (selectedServiceName == null) {
+            return;
+        }
+
+        if (selectedOffice == Office.ADMISSIONS && selectedServiceName.equals("Submit Requirements")) {
+            boolean isVerified = AlertBox.showAdmissionsChecklist(this);
+            if (!isVerified) {
+                return; // Stops if they hit cancel
+            }
+        }
+        
         TransitionHelper.fade(cardContainer, "keypadPanel");
     }//GEN-LAST:event_studentBtnActionPerformed
 
     private void staffBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_staffBtnActionPerformed
         selectedCategory = UserCategory.STAFF_EMPLOYEE;
         selectedServiceName = AlertBox.showServicePicker(this, selectedOffice, selectedCategory);
+        if (selectedServiceName == null) {
+            return;
+        }
         TransitionHelper.fade(cardContainer, "keypadPanel");
     }//GEN-LAST:event_staffBtnActionPerformed
 
@@ -776,8 +822,9 @@ public class KioskFrame extends javax.swing.JFrame {
     }//GEN-LAST:event_cancelBtnActionPerformed
 
     private void confirmFinalBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_confirmFinalBtnActionPerformed
-        Ticket newTicket = qManager.generateTicket(selectedCategory, idNumber, selectedOffice);
+        Ticket newTicket = qManager.generateTicket(selectedCategory, idNumber, selectedOffice, selectedServiceName);
         generatedTicketLbl.setText(newTicket.getTicketNumber());
+        generateReceipt(newTicket, selectedServiceName);
         if (selectedOffice != null && selectedServiceName != null) {
             String formattedOffice = selectedOffice.name().replace("_", " ");
             finalDetailsLbl.setText("<html><center><b>" + formattedOffice + "</b><br>" + selectedServiceName + "</center></html>");

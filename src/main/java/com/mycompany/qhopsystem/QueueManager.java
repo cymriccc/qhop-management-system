@@ -21,7 +21,13 @@ public class QueueManager {
     private MongoCollection<Document> collection;
 
     // Pulls from system environment, defaults to local dev settings if not found
+<<<<<<< HEAD
     private final String MONGO_URI = System.getenv("MONGO_URI");
+=======
+    private final String MONGO_URI = System.getenv("MONGO_URI") != null 
+            ? System.getenv("MONGO_URI") 
+            : "mongodb+srv://dinglecarlosebastian_db_user:FCbx1hUvstnYmWSk@qhop-management-system.jssvjwk.mongodb.net/?retryWrites=true&w=majority";
+>>>>>>> 8abc945 (feat: Final Capstone Defense Build (Master Admin, Audit Logs, Optimization))
     private final String SECRET_KEY = System.getProperty("APP_KEY");
     public QueueManager() {
         try {
@@ -74,7 +80,7 @@ public class QueueManager {
         return collection.countDocuments(Filters.eq("status", TicketStatus.COMPLETED.name()));
     }
 
-    public Ticket generateTicket(UserCategory category, String idNumber, Office initialOffice) {
+    public Ticket generateTicket(UserCategory category, String idNumber, Office initialOffice, String serviceName) {
         String prefix = initialOffice.name().substring(0, 1);
         long count = collection.countDocuments(Filters.eq("initialOffice", initialOffice.name())) + 1;
         String ticketNum = prefix + "-" + String.format("%03d", count);
@@ -84,24 +90,33 @@ public class QueueManager {
                 .append("idNumber", encryptID(idNumber))
                 .append("initialOffice", initialOffice.name())
                 .append("currentOffice", initialOffice.name())
+                .append("service", serviceName != null ? serviceName : "General")
                 .append("status", TicketStatus.WAITING.name())
                 .append("timestamp", java.time.LocalDateTime.now().toString());
 
         collection.insertOne(doc);
-        return new Ticket(ticketNum, category, idNumber, initialOffice);
+        Ticket t = new Ticket(ticketNum, category, idNumber, initialOffice);
+        t.setServiceName(serviceName != null ? serviceName : "General");
+        return t;
     }
 
     public void clearAllTickets() {
         collection.deleteMany(new Document());
     }
 
-    public Ticket callNext(Office office) {
-        Document query = new Document("status", TicketStatus.WAITING.name());
-        if (office != null) query.append("currentOffice", office.name());
+    public Ticket callNext(Office assignedOffice) {
+        Document doc = collection.findOneAndUpdate(
+            com.mongodb.client.model.Filters.and(
+                com.mongodb.client.model.Filters.eq("status", TicketStatus.WAITING.name()),
+                com.mongodb.client.model.Filters.eq("currentOffice", assignedOffice.name())
+            ),
+            com.mongodb.client.model.Updates.set("status", TicketStatus.SERVING.name()),
+            new com.mongodb.client.model.FindOneAndUpdateOptions()
+                .sort(com.mongodb.client.model.Sorts.ascending("timestamp")) 
+                .returnDocument(com.mongodb.client.model.ReturnDocument.AFTER)
+        );
         
-        Document doc = collection.find(query).first();
         if (doc != null) {
-            collection.updateOne(Filters.eq("_id", doc.getObjectId("_id")), Updates.set("status", TicketStatus.SERVING.name()));
             return mapDocumentToTicket(doc);
         }
         return null;
@@ -130,9 +145,29 @@ public class QueueManager {
         collection.updateOne(Filters.eq("ticketNumber", ticketNumber), Updates.set("status", TicketStatus.COMPLETED.name()));
     }
 
-    public List<Ticket> getActiveQueue() {
-        List<Ticket> activeQueue = new ArrayList<>();
-        for (Document doc : collection.find(Filters.ne("status", TicketStatus.COMPLETED.name()))) {
+    public java.util.List getActiveQueue() {
+        java.util.List activeQueue = new java.util.ArrayList<>();
+        for (org.bson.Document doc : collection.find(
+                com.mongodb.client.model.Filters.or(
+                        com.mongodb.client.model.Filters.eq("status", TicketStatus.WAITING.name()),
+                        com.mongodb.client.model.Filters.eq("status", TicketStatus.SERVING.name())
+                )
+        )) {
+            activeQueue.add(mapDocumentToTicket(doc));
+        }
+        return activeQueue;
+    }
+
+    public java.util.List getActiveQueue(Office assignedOffice) {
+        java.util.List activeQueue = new java.util.ArrayList<>();
+        for (org.bson.Document doc : collection.find(
+                com.mongodb.client.model.Filters.and(
+                        com.mongodb.client.model.Filters.or(
+                                com.mongodb.client.model.Filters.eq("status", TicketStatus.WAITING.name()),
+                                com.mongodb.client.model.Filters.eq("status", TicketStatus.SERVING.name())
+                        ),
+                        com.mongodb.client.model.Filters.eq("currentOffice", assignedOffice.name())
+                ))) {
             activeQueue.add(mapDocumentToTicket(doc));
         }
         return activeQueue;
@@ -166,6 +201,9 @@ public class QueueManager {
         if (doc.containsKey("timestamp")) {
             t.setTimestamp(java.time.LocalDateTime.parse(doc.getString("timestamp")));
         }
+        if (doc.containsKey("service")) {
+            t.setServiceName(doc.getString("service"));
+        }
         return t;
     }
 
@@ -185,4 +223,52 @@ public class QueueManager {
         }
         return false; 
     }
+<<<<<<< HEAD
 }
+=======
+    
+    public Office getAdminOffice(String username) {
+        String lowerUser = username.toLowerCase();
+
+        // 1. ABSOLUTE DEMO ROUTING: This intercepts the login before checking the database
+        if (lowerUser.equals("admin")) {
+            return Office.GENERAL_INQUIRY;
+        } else if (lowerUser.contains("registrar")) {
+            return Office.REGISTRAR;
+        } else if (lowerUser.contains("admission")) {
+            return Office.ADMISSIONS;
+        } else if (lowerUser.contains("treasury")) {
+            return Office.TREASURY;
+        }
+
+        // 2. Fallback to Database only if it's a completely custom username
+        org.bson.Document user = database.getCollection("users").find(com.mongodb.client.model.Filters.eq("username", username)).first();
+        if (user != null && user.containsKey("office")) {
+            return Office.valueOf(user.getString("office"));
+        }
+
+        return Office.GENERAL_INQUIRY;
+    }
+    
+    public boolean resetPassword(String username, String newPassword) {
+        org.bson.Document user = database.getCollection("users").find(com.mongodb.client.model.Filters.eq("username", username)).first();
+        if (user != null) {
+            String hashedPw = org.mindrot.jbcrypt.BCrypt.hashpw(newPassword, org.mindrot.jbcrypt.BCrypt.gensalt());
+            database.getCollection("users").updateOne(
+                    com.mongodb.client.model.Filters.eq("username", username),
+                    com.mongodb.client.model.Updates.set("password", hashedPw)
+            );
+            return true;
+        }
+        return false;
+    }
+    
+    public java.util.List<Ticket> getAllTicketsGlobal() {
+        java.util.List<Ticket> allTickets = new java.util.ArrayList<>();
+        for (org.bson.Document doc : collection.find()) {
+            allTickets.add(mapDocumentToTicket(doc));
+        }
+        return allTickets;
+    }
+}
+>>>>>>> 8abc945 (feat: Final Capstone Defense Build (Master Admin, Audit Logs, Optimization))

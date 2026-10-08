@@ -10,6 +10,7 @@ public class Ticket {
     private Office currentOffice;
     private TicketStatus status;
     private LocalDateTime timestamp;
+    private String serviceName;
 
     // Constructor
     public Ticket(String ticketNumber, UserCategory category, String idNumber, Office initialOffice) {
@@ -65,5 +66,13 @@ public class Ticket {
 
     public LocalDateTime getTimestamp() {
         return timestamp;
+    }
+    
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
     }
 }

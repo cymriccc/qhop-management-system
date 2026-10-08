@@ -22,7 +22,7 @@ public class DisplayFrame extends javax.swing.JFrame {
         bgPanel.setPreferredSize(new java.awt.Dimension(1280, 720));
         this.getContentPane().add(bgPanel);
 
-        javax.swing.Timer refreshTimer = new javax.swing.Timer(1000, e -> updateScreen());
+        javax.swing.Timer refreshTimer = new javax.swing.Timer(3000, e -> updateScreen());
         refreshTimer.start();
 
         // Live Clock
@@ -68,6 +68,8 @@ public class DisplayFrame extends javax.swing.JFrame {
                 lastCalledTicket = serving.getTicketNumber();
                 servingPanel.setBackground(new java.awt.Color(218, 165, 32));
                 lblServingTicket.setForeground(new java.awt.Color(255, 255, 255));
+                    
+                java.awt.Toolkit.getDefaultToolkit().beep();
                 
                 javax.swing.Timer flashTimer = new javax.swing.Timer(300, evt -> {
                     servingPanel.setBackground(new java.awt.Color(240, 244, 248));

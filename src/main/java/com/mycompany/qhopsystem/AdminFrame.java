@@ -6,13 +6,27 @@ public class AdminFrame extends javax.swing.JFrame {
     private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(AdminFrame.class.getName());
     private QueueManager queueManager;
     private Ticket myCurrentTicket = null;
+    private java.awt.event.AWTEventListener activityListener;
+    private Office currentOffice;
+    private javax.swing.Timer inactivityTimer;
     
-    public AdminFrame() {
+    public AdminFrame(Office assignedOffice) {
         initComponents();
         styleQueueTable();
         styleHistoryTable();
         
+        this.currentOffice = assignedOffice;
         this.queueManager = new QueueManager();
+        
+        String[] tableHeaders = {"Time", "Ticket No.", "Office", "Category", "Service", "ID Number", "Status"};
+        ((javax.swing.table.DefaultTableModel) queueTable.getModel()).setColumnIdentifiers(tableHeaders);
+        ((javax.swing.table.DefaultTableModel) historyTable.getModel()).setColumnIdentifiers(tableHeaders);
+        
+        this.setTitle("Q-Hop Admin - " + formatOffice(currentOffice) + " Desk");
+        jLabel13.setText("Live Queue Status - " + formatOffice(currentOffice));
+        jLabel14.setText("Transaction History - " + formatOffice(currentOffice));
+        jLabel13.setSize(500, jLabel13.getHeight());
+        jLabel14.setSize(500, jLabel14.getHeight());
         
         // scale the logo (dont change please)
         javax.swing.ImageIcon originalIcon = new javax.swing.ImageIcon(getClass().getResource("/5.png"));
@@ -23,10 +37,70 @@ public class AdminFrame extends javax.swing.JFrame {
         
         seedInitialData();
         refreshDashboard();
+        
+        RoundedButton btnExport = new RoundedButton("Export CSV", 20);
+        btnExport.setBackground(new java.awt.Color(52, 168, 83));
+        btnExport.setForeground(java.awt.Color.WHITE);
+        btnExport.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 14));
+        btnExport.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
 
+        btnExport.addActionListener(e -> exportTableToCSV(historyTable, "QHop_Transaction_History_" + formatOffice(currentOffice)));
+
+        transactionPanel.add(btnExport, new org.netbeans.lib.awtextra.AbsoluteConstraints(845, 30, 150, 40));
+        
+        javax.swing.JTextField txtSearch = new javax.swing.JTextField();
+        txtSearch.setText(" Search tickets, ID, or status...");
+        txtSearch.setFont(new java.awt.Font("Montserrat", java.awt.Font.PLAIN, 14));
+        txtSearch.setForeground(new java.awt.Color(148, 163, 184));
+        txtSearch.setBackground(new java.awt.Color(255, 255, 255));
+        txtSearch.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+            javax.swing.BorderFactory.createLineBorder(new java.awt.Color(210, 220, 230), 2, true),
+            javax.swing.BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+
+        // Add sorting capabilities to the history table
+        javax.swing.table.TableRowSorter<javax.swing.table.DefaultTableModel> sorter = 
+            new javax.swing.table.TableRowSorter<>((javax.swing.table.DefaultTableModel) historyTable.getModel());
+        historyTable.setRowSorter(sorter);
+
+        // Clear placeholder text on click
+        txtSearch.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                if (txtSearch.getText().equals(" Search tickets, ID, or status...")) {
+                    txtSearch.setText("");
+                    txtSearch.setForeground(new java.awt.Color(11, 42, 99));
+                }
+            }
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                if (txtSearch.getText().isEmpty()) {
+                    txtSearch.setText(" Search tickets, ID, or status...");
+                    txtSearch.setForeground(new java.awt.Color(148, 163, 184));
+                }
+            }
+        });
+
+        // Live filtering logic
+        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            private void filter() {
+                String text = txtSearch.getText();
+                if (text.trim().isEmpty() || text.equals(" Search tickets, ID, or status...")) {
+                    sorter.setRowFilter(null);
+                } else {
+                    // "(?i)" makes the search case-insensitive
+                    sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + text));
+                }
+            }
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { filter(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { filter(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { filter(); }
+        });
+
+        // Place it slightly to the left of the Export button
+        transactionPanel.add(txtSearch, new org.netbeans.lib.awtextra.AbsoluteConstraints(525, 30, 300, 40));
+        
         javax.swing.JLabel clockLabel = new javax.swing.JLabel();
         clockLabel.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 16));
-        clockLabel.setForeground(new java.awt.Color(218, 165, 32)); // Gold text to match your theme
+        clockLabel.setForeground(new java.awt.Color(218, 165, 32));
         clockLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
 
         sidebarPanel.add(clockLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 600, 220, 30));
@@ -54,24 +128,62 @@ public class AdminFrame extends javax.swing.JFrame {
             }
         });
         
-        javax.swing.Timer inactivityTimer = new javax.swing.Timer(30000, e -> {
+        inactivityTimer = new javax.swing.Timer(30000, e -> {
             this.setVisible(false);
+            if (inactivityTimer != null) {
+                inactivityTimer.stop(); // Stop the timer so it doesn't loop
+            }
+            if (activityListener != null) {
+                java.awt.Toolkit.getDefaultToolkit().removeAWTEventListener(activityListener);
+            }
 
             java.awt.EventQueue.invokeLater(() -> {
                 LoginFrame login = new LoginFrame();
                 login.setVisible(true);
                 login.requestFocus();
                 this.dispose();
-
                 AlertBox.show(login, "Session Expired", "You were logged out due to inactivity.", false);
             });
         });
         inactivityTimer.setRepeats(false);
         inactivityTimer.start();
 
-        java.awt.Toolkit.getDefaultToolkit().addAWTEventListener(event -> {
+        activityListener = event -> {
             inactivityTimer.restart();
-        }, java.awt.AWTEvent.KEY_EVENT_MASK | java.awt.AWTEvent.MOUSE_EVENT_MASK | java.awt.AWTEvent.MOUSE_MOTION_EVENT_MASK);
+        };
+
+        java.awt.Toolkit.getDefaultToolkit().addAWTEventListener(activityListener,
+                java.awt.AWTEvent.KEY_EVENT_MASK | java.awt.AWTEvent.MOUSE_EVENT_MASK | java.awt.AWTEvent.MOUSE_MOTION_EVENT_MASK);
+
+        javax.swing.JSeparator badgeSep1 = new javax.swing.JSeparator();
+        badgeSep1.setForeground(new java.awt.Color(30, 45, 75));
+        badgeSep1.setBackground(new java.awt.Color(15, 23, 42));
+        sidebarPanel.add(badgeSep1, new org.netbeans.lib.awtextra.AbsoluteConstraints(25, 295, 200, 10));
+
+        javax.swing.JLabel deptBadge = new javax.swing.JLabel(formatOffice(currentOffice).toUpperCase());
+        deptBadge.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 16));
+        deptBadge.setForeground(new java.awt.Color(100, 130, 150));
+        deptBadge.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        sidebarPanel.add(deptBadge, new org.netbeans.lib.awtextra.AbsoluteConstraints(0, 310, 250, 30));
+
+        javax.swing.JSeparator badgeSep2 = new javax.swing.JSeparator();
+        badgeSep2.setForeground(new java.awt.Color(30, 45, 75));
+        badgeSep2.setBackground(new java.awt.Color(15, 23, 42));
+        sidebarPanel.add(badgeSep2, new org.netbeans.lib.awtextra.AbsoluteConstraints(25, 345, 200, 10));
+        
+        if (currentOffice == null) {
+            this.setTitle("Q-Hop System - Master Admin Overview");
+            jLabel13.setText("Live Queue Status - Global Overview");
+            jLabel14.setText("Transaction History - Global Overview");
+
+            btnCallNext.setVisible(false);
+            btnSkip.setVisible(false);
+            btnTransfer.setVisible(false);
+            btnComplete.setVisible(false);
+            
+            currentlyServingTxt.setText("System Mode");
+            jLabel1.setText("Global Waiting Queue");
+        }
     }
     
     // Formats UserCategory enum
@@ -94,7 +206,7 @@ public class AdminFrame extends javax.swing.JFrame {
     // Formats Office enum
     private String formatOffice(Office office) {
         if (office == null) {
-            return "";
+            return "Master Admin";
         }
         switch (office) {
             case ADMISSIONS:
@@ -110,72 +222,135 @@ public class AdminFrame extends javax.swing.JFrame {
         }
     }
     
+    // Formats the existing LocalDateTime into a readable AM/PM string
+    private String formatTime(java.time.LocalDateTime time) {
+        if (time == null) return "---";
+        return time.format(java.time.format.DateTimeFormatter.ofPattern("hh:mm a"));
+    }
+    
     // Adds sample tickets to MongoDB if database is empty
     private void seedInitialData() {
-        if (queueManager.getActiveQueue().isEmpty()) {
-            queueManager.generateTicket(UserCategory.STUDENT_PARENT, "2026-100001", Office.REGISTRAR);
-            queueManager.generateTicket(UserCategory.STUDENT_PARENT, "2026-100002", Office.ADMISSIONS);
-            queueManager.generateTicket(UserCategory.STUDENT_PARENT, "2026-100003", Office.TREASURY);
-            queueManager.generateTicket(UserCategory.GUEST, "N/A", Office.GENERAL_INQUIRY);
+        if (currentOffice == null) return;
+        
+        if (queueManager.getActiveQueue(currentOffice).isEmpty()) {
+            queueManager.generateTicket(UserCategory.STUDENT_PARENT, "2026-100001", currentOffice, "General");
+            queueManager.generateTicket(UserCategory.STAFF_EMPLOYEE, "2026-100002", currentOffice, "General");
+            queueManager.generateTicket(UserCategory.GUEST, "N/A", currentOffice, "General");
         }
     }
-
+    
+    private String getOriginName(Ticket t) {
+        if (t == null) {
+            return "Empty";
+        }
+        String num = t.getTicketNumber();
+        if (num != null) {
+            if (num.startsWith("R-")) {
+                return "Registrar";
+            }
+            if (num.startsWith("A-")) {
+                return "Admissions";
+            }
+            if (num.startsWith("T-")) {
+                return "Treasury";
+            }
+            if (num.startsWith("G-")) {
+                return "General Inquiry";
+            }
+        }
+        return formatOffice(t.getCurrentOffice());
+    }
+    
     // Pulls real live data from MongoDB and populates the dashboard UI
     public void refreshDashboard() {
-        java.util.List<Ticket> activeTickets = queueManager.getActiveQueue();
+        java.util.List activeTickets;
+        
+        // 1. Fetch the correct queue
+        if (currentOffice == null) {
+            activeTickets = queueManager.getAllTicketsGlobal(); // Master Admin fetches everything
+        } else {
+            activeTickets = queueManager.getActiveQueue(currentOffice); // Normal Admin fetches their department
+        }
+
         int waitingCount = 0;
         int servingCount = 0;
-        java.util.List<Ticket> nextInQueue = new java.util.ArrayList<>();
+        java.util.List nextInQueue = new java.util.ArrayList();
 
-        for (Ticket t : activeTickets) {
+        myCurrentTicket = null;
+
+        // 2. Count statuses and recover active tickets
+        for (Object obj : activeTickets) {
+            Ticket t = (Ticket) obj;
             if (t.getStatus() == TicketStatus.WAITING) {
                 waitingCount++;
                 nextInQueue.add(t);
             } else if (t.getStatus() == TicketStatus.SERVING) {
                 servingCount++;
+                // Auto-recover only if this ticket belongs to the current normal admin
+                if (currentOffice != null && t.getCurrentOffice() == currentOffice) {
+                    myCurrentTicket = t;
+                }
             }
         }
-
-        // Update Top Stat Cards
+        
+        // 3. Update Top Stat Cards
         waitingTxt.setText(String.valueOf(waitingCount));
         servingTxt.setText(String.valueOf(servingCount));
-        completeTxt.setText(String.valueOf(queueManager.getCompletedCount()));
-
-        // ONLY show the ticket THIS specific computer called
-        if (myCurrentTicket != null) {
-            jLabel9.setText(myCurrentTicket.getTicketNumber());
-            String officeText = formatOffice(myCurrentTicket.getCurrentOffice());
-            String categoryText = formatCategory(myCurrentTicket.getCategory());
-            jLabel10.setText("<html><center><b>" + officeText + "</b><br>" + categoryText + "</center></html>");
+        
+        if (currentOffice == null) {
+            int globalComplete = 0;
+            for (Ticket t : queueManager.getAllTicketsGlobal()) {
+                if (t.getStatus() == TicketStatus.COMPLETED) globalComplete++;
+            }
+            completeTxt.setText(String.valueOf(globalComplete));
         } else {
-            jLabel9.setText("---");
-            jLabel10.setText("<html><center><b>No Ticket</b><br>Currently Serving</center></html>");
+            completeTxt.setText(String.valueOf(queueManager.getCompletedCount()));
         }
 
-        // Update Next in Queue Rows
+        // 4. Update the Big Ticket Display Card
+        if (myCurrentTicket != null) {
+            jLabel9.setText(myCurrentTicket.getTicketNumber());
+            String currentOff = formatOffice(myCurrentTicket.getCurrentOffice());
+            String serviceName = myCurrentTicket.getServiceName();
+            jLabel10.setText("<html><center><b>" + currentOff + "</b><br>" + serviceName + "</center></html>");
+        } else {
+            if (currentOffice == null) {
+                jLabel9.setText("LIVE");
+                jLabel10.setText("<html><center><b>Master Admin</b><br>Global Monitoring Active</center></html>");
+            } else {
+                jLabel9.setText("---");
+                jLabel10.setText("No Ticket Currently Serving");
+            }
+        }
+        
+        // 5. Update Next in Queue Rows
         if (nextInQueue.size() > 0) {
-            jLabel2.setText(nextInQueue.get(0).getTicketNumber());
-            jLabel3.setText(formatOffice(nextInQueue.get(0).getCurrentOffice())); // <--- Wrap with formatOffice
+            Ticket t0 = (Ticket) nextInQueue.get(0);
+            jLabel2.setText(t0.getTicketNumber());
+            jLabel3.setText(getOriginName(t0));
         } else {
             jLabel2.setText("---");
             jLabel3.setText("Empty");
         }
 
         if (nextInQueue.size() > 1) {
-            jLabel4.setText(nextInQueue.get(1).getTicketNumber());
-            jLabel5.setText(formatOffice(nextInQueue.get(1).getCurrentOffice())); // <--- Wrap with formatOffice
+            Ticket t1 = (Ticket) nextInQueue.get(1);
+            jLabel4.setText(t1.getTicketNumber());
+            jLabel5.setText(getOriginName(t1));
         } else {
             jLabel4.setText("---");
             jLabel5.setText("Empty");
         }
 
         if (nextInQueue.size() > 2) {
-            jLabel6.setText(nextInQueue.get(2).getTicketNumber());
-            jLabel7.setText(formatOffice(nextInQueue.get(2).getCurrentOffice())); // <--- Wrap with formatOffice
+            Ticket t2 = (Ticket) nextInQueue.get(2);
+            jLabel6.setText(t2.getTicketNumber());
+            jLabel7.setText(getOriginName(t2));
         } else {
             jLabel6.setText("---");
             jLabel7.setText("Empty");
         }
+
         populateQueueTable();
         populateHistoryTable();
     }
@@ -185,16 +360,22 @@ public class AdminFrame extends javax.swing.JFrame {
         model.setRowCount(0);
 
         // Grab all active tickets from MongoDB
-        java.util.List<Ticket> activeTickets = queueManager.getActiveQueue();
+        java.util.List<Ticket> activeTickets;
+        if (currentOffice == null) {
+            activeTickets = queueManager.getAllTicketsGlobal();
+        } else {
+            activeTickets = queueManager.getActiveQueue(currentOffice);
+        }
 
         // Add to table
         for (Ticket t : activeTickets) {
-            // ONLY add the ticket to the table if they are still waiting in line
             if (t.getStatus() == TicketStatus.WAITING) {
                 model.addRow(new Object[]{
+                    formatTime(t.getTimestamp()),
                     t.getTicketNumber(),
                     formatOffice(t.getCurrentOffice()),
                     formatCategory(t.getCategory()),
+                    t.getServiceName(),
                     t.getIdNumber(),
                     t.getStatus().name()
                 });
@@ -261,40 +442,79 @@ public class AdminFrame extends javax.swing.JFrame {
     public void populateHistoryTable() {
         javax.swing.table.DefaultTableModel model = (javax.swing.table.DefaultTableModel) historyTable.getModel();
         model.setRowCount(0);
-
-        java.util.List<Ticket> activeTickets = queueManager.getActiveQueue();
-        for (Ticket t : activeTickets) {
+        
+        if (currentOffice == null) {
+            // MASTER ADMIN MODE
+            java.util.List<Ticket> allTickets = queueManager.getAllTicketsGlobal();
+            for (Ticket t : allTickets) {
+                if (t.getStatus() != TicketStatus.WAITING) {
+                    model.addRow(new Object[]{
+                        formatTime(t.getTimestamp()),
+                        t.getTicketNumber(),
+                        formatOffice(t.getCurrentOffice()),
+                        formatCategory(t.getCategory()),
+                        t.getServiceName(),
+                        t.getIdNumber(),
+                        t.getStatus().name()
+                    });
+                }
+            }
+            return;
+        }
+        
+        if (historyTable.getRowSorter() != null) {
+            historyTable.getRowSorter().setSortKeys(null);
+        }
+        
+        // 1. Serving tickets
+        java.util.List activeTickets = queueManager.getActiveQueue(currentOffice);
+        for (Object obj : activeTickets) {
+            Ticket t = (Ticket) obj;
             if (t.getStatus() == TicketStatus.SERVING) {
                 model.addRow(new Object[]{
+                    formatTime(t.getTimestamp()),
                     t.getTicketNumber(),
                     formatOffice(t.getCurrentOffice()),
                     formatCategory(t.getCategory()),
+                    t.getServiceName(),
                     t.getIdNumber(),
                     t.getStatus().name()
                 });
             }
         }
         
-        java.util.List<Ticket> finishedTickets = queueManager.getCompletedQueue();
-        for (Ticket t : finishedTickets) {
-            model.addRow(new Object[]{
-                t.getTicketNumber(),
-                formatOffice(t.getCurrentOffice()),
-                formatCategory(t.getCategory()),
-                t.getIdNumber(),
-                t.getStatus().name()
-            });
+        // 2. Completed tickets
+        java.util.List finishedTickets = queueManager.getCompletedQueue();
+        for (Object obj : finishedTickets) {
+            Ticket t = (Ticket) obj;
+            if (t.getCurrentOffice() == currentOffice) {
+                model.addRow(new Object[]{
+                    formatTime(t.getTimestamp()),
+                    t.getTicketNumber(),
+                    formatOffice(t.getCurrentOffice()),
+                    formatCategory(t.getCategory()),
+                    t.getServiceName(),
+                    t.getIdNumber(),
+                    t.getStatus().name()
+                });
+            }
         }
         
-        java.util.List<Ticket> missedTickets = queueManager.getMissedQueue();
-        for (Ticket t : missedTickets) {
-            model.addRow(new Object[]{
-                t.getTicketNumber(),
-                formatOffice(t.getCurrentOffice()),
-                formatCategory(t.getCategory()),
-                t.getIdNumber(),
-                t.getStatus().name()
-            });
+        // 3. Missed tickets
+        java.util.List missedTickets = queueManager.getMissedQueue();
+        for (Object obj : missedTickets) {
+            Ticket t = (Ticket) obj;
+            if (t.getCurrentOffice() == currentOffice) {
+                model.addRow(new Object[]{
+                    formatTime(t.getTimestamp()),
+                    t.getTicketNumber(),
+                    formatOffice(t.getCurrentOffice()),
+                    formatCategory(t.getCategory()),
+                    t.getServiceName(),
+                    t.getIdNumber(),
+                    t.getStatus().name()
+                });
+            }
         }
     }
     
@@ -325,6 +545,54 @@ public class AdminFrame extends javax.swing.JFrame {
             activeBtn.setIcon(new javax.swing.ImageIcon(getClass().getResource("/queue_icon_b.png")));
         } else if (activeBtn == btnNavTransaction) {
             activeBtn.setIcon(new javax.swing.ImageIcon(getClass().getResource("/trans_icon_b.png")));
+        }
+    }
+    
+    private void exportTableToCSV(javax.swing.JTable table, String filename) {
+        try {
+            String userHome = System.getProperty("user.home");
+            java.io.File file = new java.io.File(userHome + "/Desktop/" + filename + ".csv");
+
+            try (java.io.PrintWriter writer = new java.io.PrintWriter(file)) {
+                javax.swing.table.TableModel model = table.getModel();
+
+                // Write Headers
+                for (int i = 0; i < model.getColumnCount(); i++) {
+                    writer.print(model.getColumnName(i) + (i == model.getColumnCount() - 1 ? "" : ","));
+                }
+                writer.println();
+
+                // Write Data
+                for (int i = 0; i < model.getRowCount(); i++) {
+                    for (int j = 0; j < model.getColumnCount(); j++) {
+                        Object val = model.getValueAt(i, j);
+                        writer.print((val != null ? val.toString() : "") + (j == model.getColumnCount() - 1 ? "" : ","));
+                    }
+                    writer.println();
+                }
+            }
+            AlertBox.show(this, "Export Success", "Data exported to Desktop as " + filename + ".csv", false);
+        } catch (Exception e) {
+            AlertBox.show(this, "Export Error", "Failed to export data.", true);
+        }
+    }
+    
+    private void writeToAuditLog(String action) {
+        try {
+            String userHome = System.getProperty("user.home");
+            java.io.File desktop = new java.io.File(userHome, "Desktop");
+            java.io.File logFile = new java.io.File(desktop, "QHop_Audit_Log.txt");
+            
+            String timestamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            String logEntry = "[" + timestamp + "] " + formatOffice(currentOffice) + " Admin: " + action;
+            
+            // "true" parameter tells FileWriter to append to the file, not overwrite it
+            try (java.io.FileWriter fw = new java.io.FileWriter(logFile, true);
+                 java.io.PrintWriter pw = new java.io.PrintWriter(fw)) {
+                pw.println(logEntry);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
     
@@ -673,7 +941,7 @@ public class AdminFrame extends javax.swing.JFrame {
         jLabel13.setFont(new java.awt.Font("Montserrat", 1, 24)); // NOI18N
         jLabel13.setForeground(new java.awt.Color(11, 42, 99));
         jLabel13.setText("Live Queue Status");
-        queuePanel.add(jLabel13, new org.netbeans.lib.awtextra.AbsoluteConstraints(45, 30, 300, 40));
+        queuePanel.add(jLabel13, new org.netbeans.lib.awtextra.AbsoluteConstraints(45, 30, 950, 40));
 
         jPanel1.setBackground(new java.awt.Color(255, 255, 255));
         jPanel1.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -711,7 +979,7 @@ public class AdminFrame extends javax.swing.JFrame {
         jLabel14.setFont(new java.awt.Font("Montserrat", 1, 24)); // NOI18N
         jLabel14.setForeground(new java.awt.Color(11, 42, 99));
         jLabel14.setText("Transaction History");
-        transactionPanel.add(jLabel14, new org.netbeans.lib.awtextra.AbsoluteConstraints(45, 30, 350, 40));
+        transactionPanel.add(jLabel14, new org.netbeans.lib.awtextra.AbsoluteConstraints(45, 30, 570, 40));
 
         jPanel2.setBackground(new java.awt.Color(255, 255, 255));
         jPanel2.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
@@ -756,7 +1024,8 @@ public class AdminFrame extends javax.swing.JFrame {
         }
 
         queueManager.skipTicket(myCurrentTicket.getTicketNumber());
-        myCurrentTicket = null;
+        writeToAuditLog("Skipped Ticket " + myCurrentTicket.getTicketNumber());
+        myCurrentTicket = null;       
         refreshDashboard();
     }//GEN-LAST:event_btnSkipActionPerformed
 
@@ -767,14 +1036,15 @@ public class AdminFrame extends javax.swing.JFrame {
             return;
         }
 
-        Office selectedOffice = AlertBox.showCallOfficePicker(this);
-        if (selectedOffice != null) {
-            myCurrentTicket = queueManager.callNext(selectedOffice);
-            if (myCurrentTicket == null) {
-                String formattedOffice = selectedOffice.name().replace("_", " ");
-                AlertBox.show(this, "Queue Empty", "No waiting tickets in the " + formattedOffice + " queue!", false);
-            }
-            refreshDashboard();
+        // Scoped direct call to admin's assigned office
+        myCurrentTicket = queueManager.callNext(currentOffice);
+        if (myCurrentTicket == null) {
+            String formattedOffice = formatOffice(currentOffice);
+            AlertBox.show(this, "Queue Empty", "No waiting tickets in the " + formattedOffice + " queue!", false);
+        }
+        refreshDashboard();
+        if (myCurrentTicket != null) {
+            writeToAuditLog("Called Ticket " + myCurrentTicket.getTicketNumber());
         }
     }//GEN-LAST:event_btnCallNextActionPerformed
 
@@ -786,6 +1056,7 @@ public class AdminFrame extends javax.swing.JFrame {
         Office selectedOffice = AlertBox.showOfficePicker(this, myCurrentTicket.getTicketNumber());
         if (selectedOffice != null) {
             queueManager.transferTicket(myCurrentTicket.getTicketNumber(), selectedOffice);
+            writeToAuditLog("Transferred Ticket " + myCurrentTicket.getTicketNumber() + " to " + formatOffice(selectedOffice));
             myCurrentTicket = null;
             refreshDashboard();
         }
@@ -797,6 +1068,7 @@ public class AdminFrame extends javax.swing.JFrame {
             return;
         }
         queueManager.completeTransaction(myCurrentTicket.getTicketNumber());
+        writeToAuditLog("Completed Ticket " + myCurrentTicket.getTicketNumber());
         myCurrentTicket = null;
         refreshDashboard();
     }//GEN-LAST:event_btnCompleteActionPerformed
@@ -819,6 +1091,14 @@ public class AdminFrame extends javax.swing.JFrame {
     private void btnLogOutActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnLogOutActionPerformed
         boolean confirm = AlertBox.showConfirm(this, "Log Out", "Are you sure you want to log out?");
         if (confirm) {
+            if (inactivityTimer != null) {
+                inactivityTimer.stop();
+            }
+            
+            if (activityListener != null) {
+                java.awt.Toolkit.getDefaultToolkit().removeAWTEventListener(activityListener);
+            }
+
             LoginFrame login = new LoginFrame();
             login.setVisible(true);
             javax.swing.Timer killTimer = new javax.swing.Timer(250, e -> {
@@ -831,7 +1111,7 @@ public class AdminFrame extends javax.swing.JFrame {
 
 
     public static void main(String args[]) {
-        java.awt.EventQueue.invokeLater(() -> new AdminFrame().setVisible(true));
+        java.awt.EventQueue.invokeLater(() -> new AdminFrame(Office.GENERAL_INQUIRY).setVisible(true));
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

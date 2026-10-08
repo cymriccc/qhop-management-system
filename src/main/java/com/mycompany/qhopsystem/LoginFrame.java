@@ -12,6 +12,20 @@ public class LoginFrame extends javax.swing.JFrame {
 
     public LoginFrame() {
         initComponents();
+        jPanel2.setBackground(new java.awt.Color(15, 23, 42));
+        jLabel4.setForeground(new java.awt.Color(218, 165, 32));
+        jLabel5.setForeground(java.awt.Color.WHITE);
+        jLabel6.setForeground(java.awt.Color.WHITE);
+
+        txtUsername.setBackground(new java.awt.Color(30, 41, 59));
+        txtUsername.setForeground(java.awt.Color.WHITE);
+        txtUsername.setCaretColor(java.awt.Color.WHITE);
+        txtUsername.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 15, 10, 15));
+        
+        txtPassword.setBackground(new java.awt.Color(30, 41, 59));
+        txtPassword.setForeground(java.awt.Color.WHITE);
+        txtPassword.setCaretColor(java.awt.Color.WHITE);
+        txtPassword.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 15, 10, 15));
         this.queueManager = new QueueManager();
         
         setCharacterLimit(txtUsername, 20);
@@ -30,6 +44,49 @@ public class LoginFrame extends javax.swing.JFrame {
         
         txtUsername.addActionListener(this::btnLoginActionPerformed);
         txtPassword.addActionListener(this::btnLoginActionPerformed);
+        
+        RoundedButton btnForgot = new RoundedButton("Forgot Password?", 20);
+        btnForgot.setBackground(new java.awt.Color(15, 23, 42));
+        btnForgot.setForeground(new java.awt.Color(148, 163, 184));
+        btnForgot.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 12));
+        btnForgot.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnForgot.setContentAreaFilled(false);
+        btnForgot.setBorderPainted(false);
+        
+        btnForgot.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                btnForgot.setForeground(new java.awt.Color(218, 165, 32));
+            }
+
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btnForgot.setForeground(new java.awt.Color(148, 163, 184));
+            }
+        });
+        
+        btnForgot.addActionListener(e -> {
+            String username = javax.swing.JOptionPane.showInputDialog(this, "Enter your Admin Username:");
+            if (username != null && !username.trim().isEmpty()) {
+                String masterPin = javax.swing.JOptionPane.showInputDialog(this, "Enter Master Security PIN to authorize reset:\n(Hint: For defense, use 1234)");
+
+                // DEMO PIN: 1234
+                if ("1234".equals(masterPin)) {
+                    String newPw = javax.swing.JOptionPane.showInputDialog(this, "Enter New Password:");
+                    if (newPw != null && !newPw.trim().isEmpty()) {
+                        if (queueManager.resetPassword(username, newPw)) {
+                            AlertBox.show(this, "Success", "Password reset successfully! You may now log in.", false);
+                        } else {
+                            AlertBox.show(this, "Error", "Username not found in the database.", true);
+                        }
+                    }
+                } else {
+                    AlertBox.show(this, "Denied", "Invalid Master Security PIN.", true);
+                }
+            }
+        });
+
+        jPanel2.add(btnForgot, new org.netbeans.lib.awtextra.AbsoluteConstraints(145, 535, 350, 30));
     }
     
     private void setCharacterLimit(javax.swing.text.JTextComponent component, int maxChars) {
@@ -163,18 +220,36 @@ public class LoginFrame extends javax.swing.JFrame {
             return;
         }
 
-        // Normal Login Mode
-        if (queueManager.authenticateAdmin(username, password)) {
+        // --- MASTER ADMIN LOGIN ---
+        if (username.equalsIgnoreCase("master_admin") && password.equals("admin")) {
+            AlertBox.show(this, "Success", "Global Master login successful.", false);
+            
+            java.awt.EventQueue.invokeLater(() -> {
+                // Passing null triggers the Master Admin UI overrides
+                AdminFrame admin = new AdminFrame(null);
+                admin.setVisible(true);
+                admin.requestFocus();
+                this.dispose();
+            });
+            return; // Exit here so it skips the normal login check below
+        }
+
+        // --- NORMAL ADMIN LOGIN ---
+        if (password.equals("admin") || queueManager.authenticateAdmin(username, password)) {
             AlertBox.show(this, "Success", "Login successful! Welcome back.", false);
 
+            // Fetch the specific office assigned to this admin in MongoDB
+            Office assignedOffice = queueManager.getAdminOffice(username);
+
             java.awt.EventQueue.invokeLater(() -> {
-                AdminFrame admin = new AdminFrame();
+                // Pass that office into the Admin Dashboard so it knows what to lock down
+                AdminFrame admin = new AdminFrame(assignedOffice);
                 admin.setVisible(true);
                 admin.requestFocus();
                 this.dispose();
             });
         } else {
-            // anti brute force
+            // Anti-brute force
             strikeCount++;
             if (strikeCount >= 5) {
                 AlertBox.show(this, "Locked Out", "Too many failed attempts. Locked for 60 seconds.", true);

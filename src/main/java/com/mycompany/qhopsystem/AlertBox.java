@@ -52,37 +52,59 @@ public class AlertBox {
     }
 
     // DROPDOWN ALERT (For Q-Hop Transfers) - Returns chosen Office
-    public static Office showOfficePicker(javax.swing.JFrame parent, String currentTicket) {
-        javax.swing.JDialog dialog = createBaseDialog(parent, "Transfer Ticket", "Select new office for " + currentTicket + ":", false, 250);
-        RoundedPanel container = (RoundedPanel) dialog.getContentPane().getComponent(0);
-        
-        final Office[] result = {null};
-        
-        JComboBox<Office> dropdown = new JComboBox<>(Office.values());
-        dropdown.setFont(new java.awt.Font("Montserrat", java.awt.Font.PLAIN, 14));
-        dropdown.setBounds(60, 120, 280, 40);
-        container.add(dropdown);
-        
-        RoundedButton btnTransfer = new RoundedButton("TRANSFER", 20);
-        btnTransfer.setBackground(new java.awt.Color(218, 165, 32));
-        btnTransfer.setForeground(new java.awt.Color(11, 42, 99));
-        btnTransfer.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 14));
-        btnTransfer.setBounds(60, 180, 130, 45);
-        btnTransfer.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnTransfer.addActionListener(e -> { result[0] = (Office) dropdown.getSelectedItem(); dialog.dispose(); });
-        
-        RoundedButton btnCancel = new RoundedButton("CANCEL", 20);
-        btnCancel.setBackground(new java.awt.Color(15, 23, 42));
-        btnCancel.setForeground(java.awt.Color.WHITE);
-        btnCancel.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 14));
-        btnCancel.setBounds(210, 180, 130, 45);
-        btnCancel.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnCancel.addActionListener(e -> dialog.dispose());
-        
-        container.add(btnTransfer);
-        container.add(btnCancel);
+    public static Office showOfficePicker(javax.swing.JFrame parent, String ticketNumber) {
+        javax.swing.JDialog dialog = new javax.swing.JDialog(parent, "Transfer Ticket", true);
+        dialog.setUndecorated(true);
+        dialog.setBackground(new java.awt.Color(0, 0, 0, 0));
+        dialog.setSize(400, 450);
+        dialog.setLocationRelativeTo(parent);
+
+        RoundedPanel container = new RoundedPanel(30);
+        container.setBackground(new java.awt.Color(15, 23, 42));
+        container.setLayout(new java.awt.BorderLayout(0, 20));
+        container.setBorder(javax.swing.BorderFactory.createEmptyBorder(25, 25, 25, 25));
+
+        javax.swing.JLabel title = new javax.swing.JLabel("TRANSFER TICKET " + ticketNumber + "");
+        title.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 20));
+        title.setForeground(new java.awt.Color(218, 165, 32));
+        title.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        container.add(title, java.awt.BorderLayout.NORTH);
+        javax.swing.JPanel btnPanel = new javax.swing.JPanel(new java.awt.GridLayout(4, 1, 0, 15));
+        btnPanel.setOpaque(false);
+
+        Office[] offices = {Office.REGISTRAR, Office.ADMISSIONS, Office.TREASURY, Office.GENERAL_INQUIRY};
+        final Office[] result = new Office[1];
+
+        for (Office off : offices) {
+            String officeName = off.name().replace("_", " ");
+            RoundedButton btn = new RoundedButton(officeName, 30);
+            btn.setBackground(new java.awt.Color(43, 87, 154)); // Admin blue
+            btn.setForeground(java.awt.Color.WHITE);
+            btn.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 16));
+            btn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+            btn.addActionListener(e -> {
+                result[0] = off;
+                dialog.dispose();
+            });
+            btnPanel.add(btn);
+        }
+
+        RoundedButton cancelBtn = new RoundedButton("CANCEL", 30);
+        cancelBtn.setBackground(new java.awt.Color(255, 50, 50));
+        cancelBtn.setForeground(java.awt.Color.WHITE);
+        cancelBtn.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 16));
+        cancelBtn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        cancelBtn.addActionListener(e -> dialog.dispose());
+
+        javax.swing.JPanel centerWrapper = new javax.swing.JPanel(new java.awt.BorderLayout(0, 20));
+        centerWrapper.setOpaque(false);
+        centerWrapper.add(btnPanel, java.awt.BorderLayout.CENTER);
+        centerWrapper.add(cancelBtn, java.awt.BorderLayout.SOUTH);
+
+        container.add(centerWrapper, java.awt.BorderLayout.CENTER);
+        dialog.add(container);
         dialog.setVisible(true);
-        
+
         return result[0];
     }
     
@@ -155,82 +177,163 @@ public class AlertBox {
     }
     
     public static String showServicePicker(javax.swing.JFrame parent, Office office, UserCategory category) {
-        String title = (category == UserCategory.STUDENT_PARENT) ? "Student Service" : "Staff Service";
-        javax.swing.JDialog dialog = createBaseDialog(parent, title, "Select your purpose of visit:", false, 260);
-        RoundedPanel container = (RoundedPanel) dialog.getContentPane().getComponent(0);
+        javax.swing.JDialog dialog = new javax.swing.JDialog(parent, "Select Service", true);
+        dialog.setUndecorated(true);
+        
+        // Massive size to cover almost the entire main frame
+        dialog.setSize(1100, 650); 
+        dialog.setShape(new java.awt.geom.RoundRectangle2D.Double(0, 0, 1100, 650, 40, 40));
+        dialog.setLocationRelativeTo(parent);
 
-        String[] options;
+        RoundedPanel container = new RoundedPanel(40);
+        container.setBackground(new java.awt.Color(30, 41, 59));
+        container.setLayout(new java.awt.BorderLayout(0, 40)); // Increased spacing
+        container.setBorder(javax.swing.BorderFactory.createEmptyBorder(60, 80, 60, 80)); // Thicker outer margins
 
-        if (category == UserCategory.STUDENT_PARENT) {
-            // Student-specific purposes
-            if (office == Office.REGISTRAR) {
-                options = new String[]{
-                    "Request Official Transcript of Records (TOR)",
-                    "Certificate of Enrollment / Good Moral",
-                    "Diploma / Graduation Application",
-                    "Cross-Enrollment or Add/Drop Form Approval"
-                };
-            } else if (office == Office.ADMISSIONS) {
-                options = new String[]{
-                    "New Student Admission Inquiry",
-                    "Entrance Exam Registration / Schedule",
-                    "Submission of Admission Credentials",
-                    "Transferee Evaluation"
-                };
-            } else if (office == Office.TREASURY) {
-                options = new String[]{
-                    "Tuition Fee Payment / Assessment",
-                    "Request for Statement of Account",
-                    "Refund Processing",
-                    "Scholarship / Discount Validation"
-                };
+        javax.swing.JLabel title = new javax.swing.JLabel("SELECT A SERVICE");
+        title.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 36)); // Massive title
+        title.setForeground(new java.awt.Color(218, 165, 32));
+        title.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        container.add(title, java.awt.BorderLayout.NORTH);
+
+        // Determine services based on office AND category
+        String[] services;
+        if (office == Office.REGISTRAR) {
+            if (category == UserCategory.STAFF_EMPLOYEE) {
+                services = new String[]{"Employment Records", "Clearance Routing", "Inter-office Request"};
             } else {
-                options = new String[]{"General Campus Inquiry", "Campus Tour / Information"};
+                services = new String[]{"Document Request", "Enrollment Inquiry", "Record Update"};
+            }
+        } else if (office == Office.ADMISSIONS) {
+            if (category == UserCategory.STAFF_EMPLOYEE) {
+                services = new String[]{"Employee Endorsement", "Internal Inquiry"};
+            } else {
+                services = new String[]{"Admission Inquiry", "Submit Requirements"};
+            }
+        } else if (office == Office.TREASURY) {
+            if (category == UserCategory.STAFF_EMPLOYEE) {
+                services = new String[]{"Payroll Inquiry", "Petty Cash", "Clearance"};
+            } else {
+                services = new String[]{"Tuition Payment", "Other Payment", "Payment Inquiry"};
             }
         } else {
-            // Staff/Employee-specific purposes (your reference list)
-            if (office == Office.TREASURY) {
-                options = new String[]{
-                    "Expense reimbursement or liquidation",
-                    "Department budget requests or cash advances",
-                    "Salary payments or payroll inquiries"
-                };
-            } else if (office == Office.REGISTRAR) {
-                options = new String[]{
-                    "Grade sheet submission or corrections",
-                    "Request for official records (COE, service records)",
-                    "Student clearance and prerequisite approvals"
-                };
-            } else if (office == Office.ADMISSIONS) {
-                options = new String[]{
-                    "Department applicant evaluation and interview",
-                    "Submission of departmental entrance requirements",
-                    "Employee-dependent discount or scholarship"
-                };
-            } else {
-                options = new String[]{"General Inquiry", "Administrative Support"};
-            }
+            services = new String[]{"General Inquiry", "Campus Tour", "Directions"};
         }
 
-        final String[] result = {options[0]};
+        // Panel to hold the service buttons
+        javax.swing.JPanel btnPanel = new javax.swing.JPanel(new java.awt.GridLayout(services.length, 1, 0, 25));
+        btnPanel.setOpaque(false);
 
-        javax.swing.JComboBox<String> dropdown = new javax.swing.JComboBox<>(options);
-        dropdown.setFont(new java.awt.Font("Montserrat", java.awt.Font.PLAIN, 12));
-        dropdown.setBounds(20, 120, 360, 40);
-        container.add(dropdown);
+        final String[] result = new String[1]; 
 
-        RoundedButton btnSelect = new RoundedButton("CONTINUE", 20);
-        btnSelect.setBackground(new java.awt.Color(218, 165, 32));
-        btnSelect.setForeground(new java.awt.Color(11, 42, 99));
-        btnSelect.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 14));
-        btnSelect.setBounds(130, 190, 140, 45);
-        btnSelect.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
-        btnSelect.addActionListener(e -> {
-            result[0] = (String) dropdown.getSelectedItem();
+        for (String svc : services) {
+            RoundedButton btn = new RoundedButton(svc, 30);
+            btn.setBackground(new java.awt.Color(0, 240, 255, 20)); 
+            btn.setForeground(java.awt.Color.WHITE);
+            btn.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 28)); // Massive button text
+            btn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+            btn.setContentAreaFilled(false);
+            btn.setBorderPainted(false);
+            btn.setFocusPainted(false);
+            btn.addActionListener(e -> {
+                result[0] = svc;
+                dialog.dispose();
+            });
+            btnPanel.add(btn);
+        }
+
+        RoundedButton cancelBtn = new RoundedButton("CANCEL", 30);
+        cancelBtn.setBackground(new java.awt.Color(255, 50, 50, 25));
+        cancelBtn.setForeground(java.awt.Color.WHITE);
+        cancelBtn.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 24));
+        cancelBtn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        cancelBtn.setContentAreaFilled(false);
+        cancelBtn.setBorderPainted(false);
+        cancelBtn.setFocusPainted(false);
+        cancelBtn.addActionListener(e -> dialog.dispose());
+
+        javax.swing.JPanel centerWrapper = new javax.swing.JPanel(new java.awt.BorderLayout(0, 40));
+        centerWrapper.setOpaque(false);
+        centerWrapper.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 80, 10, 80)); // Thick inner padding
+        centerWrapper.add(btnPanel, java.awt.BorderLayout.CENTER);
+        centerWrapper.add(cancelBtn, java.awt.BorderLayout.SOUTH);
+
+        container.add(centerWrapper, java.awt.BorderLayout.CENTER);
+        dialog.add(container);
+        dialog.setVisible(true);
+
+        return result[0];
+    }
+    
+    // INTERACTIVE CHECKLIST ALERT (Admissions)
+    public static boolean showAdmissionsChecklist(javax.swing.JFrame parent) {
+        // We use a height of 320 to fit the title, text, 4 checkboxes, and buttons cleanly
+        javax.swing.JDialog dialog = createBaseDialog(parent, "Admissions Checklist", "Check the documents you are submitting today:", false, 320);
+        RoundedPanel container = (RoundedPanel) dialog.getContentPane().getComponent(0);
+
+        final boolean[] result = {false};
+
+        java.awt.Font cbFont = new java.awt.Font("Montserrat", java.awt.Font.PLAIN, 12);
+        java.awt.Color fgColor = new java.awt.Color(15, 23, 42); // Deep Slate
+        java.awt.Color bgColor = new java.awt.Color(240, 244, 248); // Dialog Background
+
+        // Create Checkboxes with absolute bounds to match your container's null layout
+        javax.swing.JCheckBox cb1 = new javax.swing.JCheckBox("Form 137 / Form 138 (Original & Photocopy)");
+        cb1.setBounds(40, 110, 320, 25);
+        cb1.setFont(cbFont);
+        cb1.setForeground(fgColor);
+        cb1.setBackground(bgColor);
+        cb1.setFocusPainted(false);
+
+        javax.swing.JCheckBox cb2 = new javax.swing.JCheckBox("Certificate of Good Moral Character");
+        cb2.setBounds(40, 140, 320, 25);
+        cb2.setFont(cbFont);
+        cb2.setForeground(fgColor);
+        cb2.setBackground(bgColor);
+        cb2.setFocusPainted(false);
+
+        javax.swing.JCheckBox cb3 = new javax.swing.JCheckBox("PSA Birth Certificate (Photocopy)");
+        cb3.setBounds(40, 170, 320, 25);
+        cb3.setFont(cbFont);
+        cb3.setForeground(fgColor);
+        cb3.setBackground(bgColor);
+        cb3.setFocusPainted(false);
+
+        javax.swing.JCheckBox cb4 = new javax.swing.JCheckBox("2x2 ID Pictures (White Background)");
+        cb4.setBounds(40, 200, 320, 25);
+        cb4.setFont(cbFont);
+        cb4.setForeground(fgColor);
+        cb4.setBackground(bgColor);
+        cb4.setFocusPainted(false);
+
+        container.add(cb1);
+        container.add(cb2);
+        container.add(cb3);
+        container.add(cb4);
+
+        RoundedButton btnProceed = new RoundedButton("PROCEED", 20);
+        btnProceed.setBackground(new java.awt.Color(43, 87, 154)); // Slate Blue
+        btnProceed.setForeground(java.awt.Color.WHITE);
+        btnProceed.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 14));
+        btnProceed.setBounds(60, 250, 130, 45);
+        btnProceed.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+
+        // Gatekeeper logic: Only allow proceed if all 4 are checked
+        btnProceed.addActionListener(e -> {
+            result[0] = true;
             dialog.dispose();
         });
 
-        container.add(btnSelect);
+        RoundedButton btnCancel = new RoundedButton("CANCEL", 20);
+        btnCancel.setBackground(new java.awt.Color(15, 23, 42)); // Deep Slate
+        btnCancel.setForeground(java.awt.Color.WHITE);
+        btnCancel.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 14));
+        btnCancel.setBounds(210, 250, 130, 45);
+        btnCancel.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnCancel.addActionListener(e -> dialog.dispose());
+
+        container.add(btnProceed);
+        container.add(btnCancel);
         dialog.setVisible(true);
 
         return result[0];
