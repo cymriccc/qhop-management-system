@@ -23,17 +23,24 @@ public class QueueManager {
     // Pulls from system environment, defaults to local dev settings if not found
     private final String MONGO_URI = System.getenv("MONGO_URI") != null 
             ? System.getenv("MONGO_URI") 
-            : "mongodb+srv://dinglecarlosebastian_db_user:FCbx1hUvstnYmWSk@qhop-management-system.jssvjwk.mongodb.net/?retryWrites=true&w=majority";
+            : "";
     private final String SECRET_KEY = System.getProperty("APP_KEY");
     public QueueManager() {
         try {
+            if (MONGO_URI == null || MONGO_URI.isEmpty()) {
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    AlertBox.show(null, "Database Config Error", "CRITICAL: MONGO_URI environment variable is missing!", true);
+                });
+                System.exit(1);
+            }
+
             if (SECRET_KEY == null || SECRET_KEY.length() != 16) {
                 javax.swing.SwingUtilities.invokeLater(() -> {
                     AlertBox.show(null, "Security Fatal Error", "CRITICAL: APP_KEY environment variable is missing or not exactly 16 characters!", true);
                 });
                 System.exit(1);
             }
-            
+
             this.mongoClient = MongoClients.create(MONGO_URI);
             this.database = mongoClient.getDatabase("qhop_db");
             this.database.runCommand(new Document("ping", 1));
