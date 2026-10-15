@@ -21,7 +21,10 @@ public class QueueManager {
     private MongoCollection<Document> collection;
 
     // Pulls from system environment, defaults to local dev settings if not found
-    private final String MONGO_URI = "mongodb+srv://dinglecarlosebastian_db_user:QHOPMANAGEMENTSYSTEM2026@qhop-management-system.jssvjwk.mongodb.net/?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true";
+    private final String MONGO_URI = System.getenv("MONGO_URI") != null 
+            ? System.getenv("MONGO_URI") 
+            : "mongodb+srv://<USERNAME>:<PASSWORD>@<CLUSTER_URL>/?retryWrites=true&w=majority";
+            
     private final String SECRET_KEY = System.getProperty("APP_KEY");
     public QueueManager() {
         try {
