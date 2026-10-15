@@ -12,15 +12,36 @@ public class AdminFrame extends javax.swing.JFrame {
     
     public AdminFrame(Office assignedOffice) {
         initComponents();
-        styleQueueTable();
-        styleHistoryTable();
         
         this.currentOffice = assignedOffice;
         this.queueManager = new QueueManager();
         
-        String[] tableHeaders = {"Time", "Ticket No.", "Office", "Category", "Service", "ID Number", "Status"};
-        ((javax.swing.table.DefaultTableModel) queueTable.getModel()).setColumnIdentifiers(tableHeaders);
-        ((javax.swing.table.DefaultTableModel) historyTable.getModel()).setColumnIdentifiers(tableHeaders);
+        // 1. DEFINE THE NEW MODELS
+        javax.swing.table.DefaultTableModel newQueueModel = new javax.swing.table.DefaultTableModel(0, 8) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column == 7;
+            } // Only Action column is clickable
+        };
+        javax.swing.table.DefaultTableModel newHistoryModel = new javax.swing.table.DefaultTableModel(0, 8) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            } // History remains read-only
+        };
+        
+        // 2. APPLY THE MODELS TO THE TABLES
+        queueTable.setModel(newQueueModel);
+        historyTable.setModel(newHistoryModel);
+
+        // 3. SET THE HEADERS (This tells the table it now has 8 columns)
+        String[] tableHeaders = {"Time", "Ticket No.", "Office", "Category", "Service", "ID Number", "Status", "Action"};
+        newQueueModel.setColumnIdentifiers(tableHeaders);
+        newHistoryModel.setColumnIdentifiers(tableHeaders);
+        
+        // 4. NOW APPLY THE STYLING AND CUSTOM RENDERERS (Safe because it now has 8 columns)
+        styleQueueTable();
+        styleHistoryTable();
         
         this.setTitle("Q-Hop Admin - " + formatOffice(currentOffice) + " Desk");
         jLabel13.setText("Live Queue Status - " + formatOffice(currentOffice));
@@ -104,7 +125,64 @@ public class AdminFrame extends javax.swing.JFrame {
         clockLabel.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
 
         sidebarPanel.add(clockLabel, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 600, 220, 30));
+        
+        // --- LIVE QUEUE SEARCH BAR ---
+        javax.swing.JTextField txtQueueSearch = new javax.swing.JTextField();
+        txtQueueSearch.setText(" Search active queue...");
+        txtQueueSearch.setFont(new java.awt.Font("Montserrat", java.awt.Font.PLAIN, 14));
+        txtQueueSearch.setForeground(new java.awt.Color(148, 163, 184));
+        txtQueueSearch.setBackground(new java.awt.Color(255, 255, 255));
+        txtQueueSearch.setBorder(javax.swing.BorderFactory.createCompoundBorder(
+                javax.swing.BorderFactory.createLineBorder(new java.awt.Color(210, 220, 230), 2, true),
+                javax.swing.BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
 
+        javax.swing.table.TableRowSorter<javax.swing.table.DefaultTableModel> queueSorter
+                = new javax.swing.table.TableRowSorter<>((javax.swing.table.DefaultTableModel) queueTable.getModel());
+        queueTable.setRowSorter(queueSorter);
+
+        txtQueueSearch.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusGained(java.awt.event.FocusEvent evt) {
+                if (txtQueueSearch.getText().equals(" Search active queue...")) {
+                    txtQueueSearch.setText("");
+                    txtQueueSearch.setForeground(new java.awt.Color(11, 42, 99));
+                }
+            }
+
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                if (txtQueueSearch.getText().isEmpty()) {
+                    txtQueueSearch.setText(" Search active queue...");
+                    txtQueueSearch.setForeground(new java.awt.Color(148, 163, 184));
+                }
+            }
+        });
+
+        txtQueueSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            private void filter() {
+                String text = txtQueueSearch.getText();
+                if (text.trim().isEmpty() || text.equals(" Search active queue...")) {
+                    queueSorter.setRowFilter(null);
+                } else {
+                    queueSorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + text));
+                }
+            }
+
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+        });
+
+        // Add to the Queue Panel layout
+        queuePanel.add(txtQueueSearch, new org.netbeans.lib.awtextra.AbsoluteConstraints(695, 30, 300, 40));
+        
         // clock timer
         javax.swing.Timer clockTimer = new javax.swing.Timer(1000, e -> {
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("h:mm:ss a");
@@ -121,10 +199,11 @@ public class AdminFrame extends javax.swing.JFrame {
         sidebarPanel.add(btnReset, new org.netbeans.lib.awtextra.AbsoluteConstraints(15, 540, 220, 45));
 
         btnReset.addActionListener(e -> {
-            boolean confirm = AlertBox.showConfirm(this, "Reset Queue", "Clear all tickets for the day?");
+            boolean confirm = AlertBox.showConfirm(this, "End of Day Reset", "Archive and clear all tickets to prepare for a new day?");
             if (confirm) {
                 queueManager.clearAllTickets();
                 refreshDashboard();
+                AlertBox.show(this, "Archived", "All tickets have been successfully moved to the historical archive.", false);
             }
         });
         
@@ -369,7 +448,8 @@ public class AdminFrame extends javax.swing.JFrame {
 
         // Add to table
         for (Ticket t : activeTickets) {
-            if (t.getStatus() == TicketStatus.WAITING) {
+            if (t.getStatus() == TicketStatus.WAITING || t.getStatus() == TicketStatus.SERVING) {
+                String actionBtn = (t.getStatus() == TicketStatus.WAITING) ? "CALL" : "COMPLETE";
                 model.addRow(new Object[]{
                     formatTime(t.getTimestamp()),
                     t.getTicketNumber(),
@@ -377,7 +457,8 @@ public class AdminFrame extends javax.swing.JFrame {
                     formatCategory(t.getCategory()),
                     t.getServiceName(),
                     t.getIdNumber(),
-                    t.getStatus().name()
+                    t.getStatus().name(),
+                    actionBtn
                 });
             }
         }
@@ -409,6 +490,8 @@ public class AdminFrame extends javax.swing.JFrame {
         for (int x = 0; x < queueTable.getColumnCount(); x++) {
             queueTable.getColumnModel().getColumn(x).setCellRenderer(centerRenderer);
         }
+        queueTable.getColumnModel().getColumn(7).setCellRenderer(new ActionButtonRenderer());
+        queueTable.getColumnModel().getColumn(7).setCellEditor(new ActionButtonEditor(new javax.swing.JCheckBox()));
     }
     
     private void styleHistoryTable() {
@@ -1113,7 +1196,94 @@ public class AdminFrame extends javax.swing.JFrame {
     public static void main(String args[]) {
         java.awt.EventQueue.invokeLater(() -> new AdminFrame(Office.GENERAL_INQUIRY).setVisible(true));
     }
+    
+    class ActionButtonRenderer extends javax.swing.table.DefaultTableCellRenderer {
 
+        private com.mycompany.qhopsystem.RoundedButton button = new com.mycompany.qhopsystem.RoundedButton("", 15);
+
+        @Override
+        public java.awt.Component getTableCellRendererComponent(javax.swing.JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            javax.swing.JPanel panel = new javax.swing.JPanel(new java.awt.GridBagLayout());
+            panel.setBackground(isSelected ? table.getSelectionBackground() : java.awt.Color.WHITE);
+
+            if (value != null && !value.toString().isEmpty()) {
+                button.setText(value.toString());
+                button.setPreferredSize(new java.awt.Dimension(120, 30));
+                button.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 12));
+
+                if (value.toString().equals("CALL")) {
+                    button.setBackground(new java.awt.Color(43, 87, 154));
+                } else if (value.toString().equals("COMPLETE")) {
+                    button.setBackground(new java.awt.Color(52, 168, 83));
+                }
+                button.setForeground(java.awt.Color.WHITE);
+                panel.add(button);
+            }
+            return panel;
+        }
+    }
+
+    class ActionButtonEditor extends javax.swing.DefaultCellEditor {
+
+        private com.mycompany.qhopsystem.RoundedButton button;
+        private String label;
+        private boolean isPushed;
+        private String ticketNumber;
+
+        public ActionButtonEditor(javax.swing.JCheckBox checkBox) {
+            super(checkBox);
+            button = new com.mycompany.qhopsystem.RoundedButton("", 15);
+            button.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 12));
+            button.addActionListener(e -> fireEditingStopped());
+        }
+
+        @Override
+        public java.awt.Component getTableCellEditorComponent(javax.swing.JTable table, Object value, boolean isSelected, int row, int column) {
+            label = (value == null) ? "" : value.toString();
+            button.setText(label);
+            ticketNumber = table.getValueAt(row, 1).toString();
+            isPushed = true;
+            return button;
+        }
+
+        @Override
+        public Object getCellEditorValue() {
+            if (isPushed && label != null && !label.isEmpty()) {
+                // Safely capture the variables before the row gets deleted
+                final String actionLabel = label;
+                final String targetTicket = ticketNumber;
+
+                // Delay the table refresh until Java finishes the click event
+                javax.swing.SwingUtilities.invokeLater(() -> {
+                    if (actionLabel.equals("CALL")) {
+                        if (myCurrentTicket != null) {
+                            AlertBox.show(AdminFrame.this, "Finish Current", "Please Complete or Skip the active ticket before calling another.", true);
+                        } else {
+                            myCurrentTicket = queueManager.callSpecificTicket(targetTicket);
+                            refreshDashboard();
+                            writeToAuditLog("Manually Called Ticket " + targetTicket);
+                        }
+                    } else if (actionLabel.equals("COMPLETE")) {
+                        queueManager.completeTransaction(targetTicket);
+                        if (myCurrentTicket != null && myCurrentTicket.getTicketNumber().equals(targetTicket)) {
+                            myCurrentTicket = null;
+                        }
+                        refreshDashboard();
+                        writeToAuditLog("Completed Ticket " + targetTicket);
+                    }
+                });
+            }
+            isPushed = false;
+            return label;
+        }
+
+        @Override
+        public boolean stopCellEditing() {
+            isPushed = false;
+            return super.stopCellEditing();
+        }
+    }
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnCallNext;
     private javax.swing.JButton btnComplete;

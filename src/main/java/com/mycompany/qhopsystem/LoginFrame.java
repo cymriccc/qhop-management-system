@@ -66,13 +66,13 @@ public class LoginFrame extends javax.swing.JFrame {
         });
         
         btnForgot.addActionListener(e -> {
-            String username = javax.swing.JOptionPane.showInputDialog(this, "Enter your Admin Username:");
+            String username = getStyledInput("Enter your Admin Username:");
             if (username != null && !username.trim().isEmpty()) {
-                String masterPin = javax.swing.JOptionPane.showInputDialog(this, "Enter Master Security PIN to authorize reset:\n(Hint: For defense, use 1234)");
+                String masterPin = getStyledInput("Enter Master Security PIN to authorize reset:");
 
                 // DEMO PIN: 1234
                 if ("1234".equals(masterPin)) {
-                    String newPw = javax.swing.JOptionPane.showInputDialog(this, "Enter New Password:");
+                    String newPw = getStyledInput("Enter New Password:");
                     if (newPw != null && !newPw.trim().isEmpty()) {
                         if (queueManager.resetPassword(username, newPw)) {
                             AlertBox.show(this, "Success", "Password reset successfully! You may now log in.", false);
@@ -113,6 +113,90 @@ public class LoginFrame extends javax.swing.JFrame {
                 }
             }
         });
+    }
+    
+    private String getStyledInput(String prompt) {
+        javax.swing.JPanel panel = new javax.swing.JPanel(new java.awt.BorderLayout(0, 10));
+        panel.setBackground(new java.awt.Color(15, 23, 42));
+
+        javax.swing.JLabel label = new javax.swing.JLabel(prompt);
+        label.setForeground(new java.awt.Color(218, 165, 32));
+        label.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 14));
+
+        javax.swing.JTextField field = new javax.swing.JTextField();
+        field.setBackground(new java.awt.Color(30, 41, 59));
+        field.setForeground(java.awt.Color.WHITE);
+        field.setCaretColor(java.awt.Color.WHITE);
+        field.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 15, 10, 15));
+        field.setPreferredSize(new java.awt.Dimension(300, 40));
+
+        panel.add(label, java.awt.BorderLayout.NORTH);
+        panel.add(field, java.awt.BorderLayout.CENTER);
+
+        javax.swing.UIManager.put("OptionPane.background", new java.awt.Color(15, 23, 42));
+        javax.swing.UIManager.put("Panel.background", new java.awt.Color(15, 23, 42));
+
+        // Create Custom Gold OK Button
+        com.mycompany.qhopsystem.RoundedButton btnOk = new com.mycompany.qhopsystem.RoundedButton("OK", 20);
+        btnOk.setBackground(new java.awt.Color(218, 165, 32));
+        btnOk.setForeground(new java.awt.Color(11, 42, 99));
+        btnOk.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 14));
+        btnOk.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+
+        // Create Custom Slate Cancel Button
+        com.mycompany.qhopsystem.RoundedButton btnCancel = new com.mycompany.qhopsystem.RoundedButton("Cancel", 20);
+        btnCancel.setBackground(new java.awt.Color(30, 41, 59));
+        btnCancel.setForeground(java.awt.Color.WHITE);
+        btnCancel.setFont(new java.awt.Font("Montserrat", java.awt.Font.BOLD, 14));
+        btnCancel.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+
+        Object[] options = {btnOk, btnCancel};
+        javax.swing.JOptionPane pane = new javax.swing.JOptionPane(
+                panel,
+                javax.swing.JOptionPane.PLAIN_MESSAGE,
+                javax.swing.JOptionPane.DEFAULT_OPTION,
+                null,
+                options,
+                options[0]
+        );
+
+        javax.swing.JDialog dialog = pane.createDialog(this, "Security Verification");
+
+        // Wire OK button with validation
+        btnOk.addActionListener(e -> {
+            if (field.getText().trim().isEmpty()) {
+                AlertBox.show(this, "Required Field", "Please enter a value to proceed.", true);
+                field.requestFocusInWindow();
+                return; // Stops the dialog from closing
+            }
+            pane.setValue(0);
+            dialog.dispose();
+        });
+
+        // Wire Cancel button
+        btnCancel.addActionListener(e -> {
+            pane.setValue(1);
+            dialog.dispose();
+        });
+
+        // Bind the "Enter" key to trigger the OK button automatically
+        field.addActionListener(e -> btnOk.doClick());
+
+        // Auto-focus the text field so you don't have to click it
+        dialog.addWindowFocusListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowGainedFocus(java.awt.event.WindowEvent e) {
+                field.requestFocusInWindow();
+            }
+        });
+
+        dialog.setVisible(true);
+
+        Object selectedValue = pane.getValue();
+        if (selectedValue != null && selectedValue.equals(0)) {
+            return field.getText();
+        }
+        return null;
     }
     
     @SuppressWarnings("unchecked")
@@ -220,29 +304,14 @@ public class LoginFrame extends javax.swing.JFrame {
             return;
         }
 
-        // --- MASTER ADMIN LOGIN ---
-        if (username.equalsIgnoreCase("master_admin") && password.equals("admin")) {
-            AlertBox.show(this, "Success", "Global Master login successful.", false);
-            
-            java.awt.EventQueue.invokeLater(() -> {
-                // Passing null triggers the Master Admin UI overrides
-                AdminFrame admin = new AdminFrame(null);
-                admin.setVisible(true);
-                admin.requestFocus();
-                this.dispose();
-            });
-            return; // Exit here so it skips the normal login check below
-        }
-
-        // --- NORMAL ADMIN LOGIN ---
-        if (password.equals("admin") || queueManager.authenticateAdmin(username, password)) {
+        // --- SECURE DATABASE LOGIN ---
+        if (queueManager.authenticateAdmin(username, password)) {
             AlertBox.show(this, "Success", "Login successful! Welcome back.", false);
 
             // Fetch the specific office assigned to this admin in MongoDB
             Office assignedOffice = queueManager.getAdminOffice(username);
 
             java.awt.EventQueue.invokeLater(() -> {
-                // Pass that office into the Admin Dashboard so it knows what to lock down
                 AdminFrame admin = new AdminFrame(assignedOffice);
                 admin.setVisible(true);
                 admin.requestFocus();

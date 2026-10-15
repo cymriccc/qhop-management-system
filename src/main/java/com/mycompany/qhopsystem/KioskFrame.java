@@ -137,7 +137,7 @@ public class KioskFrame extends javax.swing.JFrame {
             e.printStackTrace();
         }
     }
-    
+        
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -785,26 +785,32 @@ public class KioskFrame extends javax.swing.JFrame {
 
     private void continueBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_continueBtnActionPerformed
         String typedId = idDisplayField.getText().trim();
-
         if (typedId.equals("Enter ID number") || typedId.isEmpty()) {
             AlertBox.show(this, "Input Required", "Please enter your ID number before continuing.", true);
             return;
         }
-
         if (!typedId.matches("\\d{4}-\\d{6}")) {
             AlertBox.show(this, "Invalid ID", "Invalid format. Please use 10 digits (e.g. 2026-123456).", true);
             return;
         }
-        
+
+        if (selectedCategory != UserCategory.GUEST) {
+            if (!qManager.isValidUser(typedId, selectedCategory)) {
+                String role = (selectedCategory == UserCategory.STAFF_EMPLOYEE) ? "Employee" : "Student";
+                AlertBox.show(this, "Validation Failed", "Invalid ID Number. " + role + " not found in official university records.", true);
+                return; // Stops them from leaving the keypad screen
+            }
+        }
+
         if (qManager.hasActiveTicket(typedId)) {
             AlertBox.show(this, "Duplicate Ticket", "You already have an active ticket waiting in the queue!", true);
             idDisplayField.setText("Enter ID number");
             idDisplayField.setForeground(new java.awt.Color(100, 130, 150));
             return;
         }
-        
+
         idNumber = typedId;
-        
+
         refreshConfirmationScreen();
         TransitionHelper.fade(cardContainer, "printConfirmPanel");
     }//GEN-LAST:event_continueBtnActionPerformed

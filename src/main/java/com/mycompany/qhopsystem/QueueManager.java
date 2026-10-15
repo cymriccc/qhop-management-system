@@ -21,9 +21,7 @@ public class QueueManager {
     private MongoCollection<Document> collection;
 
     // Pulls from system environment, defaults to local dev settings if not found
-    private final String MONGO_URI = System.getenv("MONGO_URI") != null 
-            ? System.getenv("MONGO_URI") 
-            : "";
+    private final String MONGO_URI = "mongodb+srv://dinglecarlosebastian_db_user:QHOPMANAGEMENTSYSTEM2026@qhop-management-system.jssvjwk.mongodb.net/?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true";
     private final String SECRET_KEY = System.getProperty("APP_KEY");
     public QueueManager() {
         try {
@@ -46,6 +44,7 @@ public class QueueManager {
             this.database.runCommand(new Document("ping", 1));
             this.collection = database.getCollection("tickets");
         } catch (Exception e) {
+            e.printStackTrace();
             AlertBox.show(null, "Database Offline", "Cannot connect to MongoDB. Check URI and network.", true);
             System.exit(1);
         }
@@ -104,7 +103,19 @@ public class QueueManager {
     }
 
     public void clearAllTickets() {
-        collection.deleteMany(new Document());
+        // 1. Target a new 'tickets_archive' collection
+        MongoCollection<org.bson.Document> archiveCollection = database.getCollection("tickets_archive");
+
+        // 2. Fetch every ticket currently sitting in the active queue
+        java.util.List<org.bson.Document> allTickets = collection.find().into(new java.util.ArrayList<>());
+
+        // 3. If there are tickets, dump them into the archive collection in one bulk operation
+        if (!allTickets.isEmpty()) {
+            archiveCollection.insertMany(allTickets);
+        }
+
+        // 4. Wipe the active queue clean for the new day
+        collection.deleteMany(new org.bson.Document());
     }
 
     public Ticket callNext(Office assignedOffice) {
@@ -124,7 +135,22 @@ public class QueueManager {
         }
         return null;
     }
-
+    
+    public Ticket callSpecificTicket(String ticketNumber) {
+        org.bson.Document doc = collection.findOneAndUpdate(
+                com.mongodb.client.model.Filters.and(
+                        com.mongodb.client.model.Filters.eq("ticketNumber", ticketNumber),
+                        com.mongodb.client.model.Filters.eq("status", TicketStatus.WAITING.name())
+                ),
+                com.mongodb.client.model.Updates.set("status", TicketStatus.SERVING.name()),
+                new com.mongodb.client.model.FindOneAndUpdateOptions().returnDocument(com.mongodb.client.model.ReturnDocument.AFTER)
+        );
+        if (doc != null) {
+            return mapDocumentToTicket(doc);
+        }
+        return null;
+    }
+    
     public boolean transferTicket(String ticketNumber, Office destinationOffice) {
         Document doc = collection.find(new Document("ticketNumber", ticketNumber)).first();
         if (doc != null) {
@@ -228,26 +254,26 @@ public class QueueManager {
     }
     
     public Office getAdminOffice(String username) {
-        String lowerUser = username.toLowerCase();
+        // Pull the user document directly from MongoDB
+        org.bson.Document user = database.getCollection("users")
+                .find(com.mongodb.client.model.Filters.eq("username", username)).first();
 
-        // 1. ABSOLUTE DEMO ROUTING: This intercepts the login before checking the database
-        if (lowerUser.equals("admin")) {
-            return Office.GENERAL_INQUIRY;
-        } else if (lowerUser.contains("registrar")) {
-            return Office.REGISTRAR;
-        } else if (lowerUser.contains("admission")) {
-            return Office.ADMISSIONS;
-        } else if (lowerUser.contains("treasury")) {
-            return Office.TREASURY;
-        }
-
-        // 2. Fallback to Database only if it's a completely custom username
-        org.bson.Document user = database.getCollection("users").find(com.mongodb.client.model.Filters.eq("username", username)).first();
         if (user != null && user.containsKey("office")) {
-            return Office.valueOf(user.getString("office"));
-        }
+            // Format the string (e.g., changes "GENERAL INQUIRY" from DB to "GENERAL_INQUIRY" for Java)
+            String dbOffice = user.getString("office").replace(" ", "_").toUpperCase();
 
-        return Office.GENERAL_INQUIRY;
+            // If it's the Master Admin, return null to trigger the Master Dashboard
+            if (dbOffice.equals("MASTER")) {
+                return null;
+            }
+
+            try {
+                return Office.valueOf(dbOffice);
+            } catch (IllegalArgumentException e) {
+                return Office.GENERAL_INQUIRY; // Fallback if typo in DB
+            }
+        }
+        return Office.GENERAL_INQUIRY; // Default fallback
     }
     
     public boolean resetPassword(String username, String newPassword) {
@@ -269,6 +295,27 @@ public class QueueManager {
             allTickets.add(mapDocumentToTicket(doc));
         }
         return allTickets;
+    }
+    
+    public boolean userExists(String username) {
+        return database.getCollection("users").find(Filters.eq("username", username)).first() != null;
+    }
+    
+    public boolean isValidUser(String rawId, UserCategory category) {
+        // Guests bypass the ID check
+        if (rawId == null || rawId.equals("N/A") || rawId.trim().isEmpty()) {
+            return true;
+        }
+
+        // Dynamically select the target collection based on the user type
+        String targetCollection = (category == UserCategory.STAFF_EMPLOYEE) ? "employees" : "students";
+
+        // Query the specific collection
+        org.bson.Document record = database.getCollection(targetCollection)
+                .find(com.mongodb.client.model.Filters.eq("idNumber", rawId))
+                .first();
+
+        return record != null;
     }
 }
 

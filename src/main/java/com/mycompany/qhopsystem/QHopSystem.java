@@ -27,7 +27,6 @@ public class QHopSystem {
             subtitle.setBounds(0, 80, 450, 30);
             bgPanel.add(subtitle);
 
-            // Ice Blue Buttons
             RoundedButton btnAdmin = new RoundedButton("Admin Dashboard", 30);
             btnAdmin.setBackground(new java.awt.Color(240, 244, 248)); 
             btnAdmin.setForeground(new java.awt.Color(11, 42, 99)); 
